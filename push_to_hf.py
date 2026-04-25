@@ -17,7 +17,7 @@ def push_to_hf():
         "train_log.txt"
     ]
     
-    print(f"🚀 Syncing local files to Hugging Face Space: {repo_id}")
+    print(f"[PUSH] Syncing local files to Hugging Face Space: {repo_id}")
     
     try:
         api = HfApi()
@@ -30,9 +30,9 @@ def push_to_hf():
             ignore_patterns=exclude,
             delete_patterns=None # Don't delete things in the Space that aren't local
         )
-        print("✅ Successfully pushed to Hugging Face!")
+        print("[SUCCESS] Successfully pushed to Hugging Face!")
     except Exception as e:
-        print(f"❌ Error pushing to HF: {e}")
+        print(f"[ERROR] Error pushing to HF: {e}")
         print("\nTip: Make sure you are logged in using 'huggingface-cli login' or have set the HUGGING_FACE_HUB_TOKEN environment variable.")
 
 if __name__ == "__main__":

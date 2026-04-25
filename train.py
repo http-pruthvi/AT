@@ -1,6 +1,5 @@
 import os
 import sys
-import torch
 import json
 
 # Fix Windows console encoding
@@ -8,6 +7,7 @@ if sys.platform == "win32":
     os.environ["PYTHONUTF8"] = "1"
     os.environ["PYTHONIOENCODING"] = "utf-8"
 
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from trl import GRPOTrainer, GRPOConfig
 from datasets import Dataset
@@ -31,12 +31,11 @@ def openenv_reward(completions, **kwargs):
             # Connect to local or remote environment
             with AdaptiveTutorEnv(base_url=BASE_URL).sync() as env:
                 obs = env.reset()
-                # Simplified action parsing for reward loop
                 action = TutorAction(
                     action_type="ask_question",
                     question=completion,
-                    difficulty=1, # Default
-                    concept="general",
+                    difficulty=obs.recommended_difficulty if hasattr(obs, 'recommended_difficulty') else 1,
+                    concept=obs.weak_concepts[0] if (hasattr(obs, 'weak_concepts') and obs.weak_concepts) else "general",
                     explanation=""
                 )
                 result = env.step(action)
@@ -50,11 +49,27 @@ def make_dataset():
     """Create a small diverse dataset for training."""
     prompts = []
     subjects = ["Math", "Science", "History"]
-    for sub in subjects:
-        for d in ["easy", "medium", "hard"]:
-            prompt = f"<|system|>\nYou are an adaptive AI tutor. Generate ONE clear question.\n</s>\n<|user|>\nSubject: {sub}\nDifficulty: {d}\nGenerate a question.\n</s>\n<|assistant|>\n"
-            prompts.append({"prompt": prompt})
-    return Dataset.from_list(prompts * 5)
+    concepts = {
+        "Math": ["algebra", "geometry", "calculus"],
+        "Science": ["photosynthesis", "cell division", "Newton laws"],
+        "History": ["World War 2", "Indian independence", "Renaissance"]
+    }
+    for subject in subjects:
+        for concept in concepts[subject]:
+            for difficulty in ["easy", "medium", "hard"]:
+                prompt = f"""<|system|>
+You are an adaptive AI tutor. Generate a single clear question.
+</s>
+<|user|>
+Subject: {subject}
+Concept: {concept}
+Difficulty: {difficulty}
+Student mastery: 45%
+Generate ONE question only. No explanation.
+</s>
+<|assistant|>"""
+                prompts.append({"prompt": prompt})
+    return Dataset.from_list(prompts * 3)
 
 def train():
     print(f"Checking for GPU...")
