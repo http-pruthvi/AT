@@ -111,32 +111,36 @@ python server.py
 - **FastAPI + uvicorn** - Environment server
 - **Gradio** - Interactive UI (Human Mode + Demo Mode)
 - **TRL + GRPO** - Training algorithm
-- **TinyLlama-1.1B** - Base model for training
-- **Ollama + Qwen2.5-3B** - Local LLM for question generation
+- **Qwen2.5-0.5B** - Base model for training and tutor reasoning
+- **Ollama + Qwen2.5-0.5B** - Local LLM for student answer evaluation
 
 ## 📁 Project Structure
 ```text
 adaptive-tutor-ai/
-├── server.py              # OpenEnv environment (reset, step, state)
-├── client.py              # HTTPEnvClient subclass
-├── student_model.py       # Simulated student with mastery tracking
-├── question_generator.py  # Question banks per subject/concept
-├── expert_simulator.py    # Snorkel AI bonus - shifting preferences
-├── reward.py              # 5 independent reward functions
-├── app.py                 # Gradio UI (Human + Demo mode)
-├── train.py               # GRPO training script
-├── product_evaluator.py   # LLM-based answer evaluation
-├── session_manager.py     # Human session state management
+├── app.py                 # Gradio Web Interface
+├── server.py              # OpenEnv Environment Server (reset, step, state)
+├── shared.py              # Shared AI models, environment wrapper, and types
+├── client.py              # Typed OpenEnv client for agents
+├── core/                  # Core Business Logic
+│   ├── session_manager.py     # Mastery & Progress tracking
+│   ├── question_generator.py  # Rule-based Question Engine
+│   ├── product_evaluator.py   # AI-powered answer checking
+│   ├── student_model.py       # Simulated student behavior
+│   ├── expert_simulator.py    # Randomized expert feedback generator
+│   └── reward.py              # Multi-factor reward calculator
+├── training/              # Training & Self-Improvement
+│   ├── train.py               # GRPO RL training script
+│   ├── self_improve.py        # Dataset generation & filtering
+│   └── training.ipynb         # Interactive research & visualization
+├── data/                  # Persistent Data (Profiles & Logs)
+├── subjects/              # Subject-specific knowledge bases (JSON)
+├── assets/                # Images, charts, and generated plots
+├── docs/                  # Project documentation & pitch
+├── logs/                  # Training and interaction logs
+├── requirements.txt       # Dependencies
 ├── openenv.yaml           # OpenEnv manifest
 ├── pyproject.toml         # Pip installable package
-├── Dockerfile             # Container config
-├── reward_curve.png       # Training evidence
-├── reward_breakdown.png   # Per-step reward breakdown
-├── mastery_progression.png # Student mastery over time
-└── subjects/
-    ├── math.json
-    ├── science.json
-    └── history.json
+└── Dockerfile             # Container config
 ```
 
 ## 🔗 Links

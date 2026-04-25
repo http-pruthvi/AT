@@ -2,16 +2,17 @@ import os
 import random
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
-from question_generator import QuestionGenerator
-from student_model import StudentProfile
-from expert_simulator import ExpertSimulator
-from reward import RewardManager
+from core.question_generator import QuestionGenerator
+from core.student_model import StudentProfile
+from core.expert_simulator import ExpertSimulator
+from core.reward import RewardManager
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from config import settings
 
 # --- Shared AI Model ---
-AI_MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
-TRAINED_MODEL_PATH = "./adaptive_tutor_trained"
+AI_MODEL_NAME = settings.ai_model_name
+TRAINED_MODEL_PATH = settings.trained_model_path
 
 ai_model = None
 ai_tokenizer = None
@@ -186,6 +187,10 @@ class AdaptiveTutorEnv(Environment):
             done=self.episode_done,
             info=self.last_reward_breakdown
         )
+
+    def state(self) -> TutorObservation:
+        """OpenEnv compatibility hook for reading current env state."""
+        return self._make_observation()
 
 # Global Instance
 env_instance = AdaptiveTutorEnv()

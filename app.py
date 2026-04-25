@@ -1,22 +1,16 @@
-import os
 import gradio as gr
-import requests
-import json
-import time
-import random
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from session_manager import SessionManager
-from product_evaluator import ProductEvaluator
-from question_generator import QuestionGenerator
-from shared import env_instance, TutorAction, load_ai_model, AI_LOADED
+import time
+import pandas as pd
+import matplotlib.pyplot as plt
+import random
+from core.session_manager import SessionManager
+from core.product_evaluator import ProductEvaluator
+from core.question_generator import QuestionGenerator
+from shared import AdaptiveTutorEnv, TutorAction, load_ai_model, AI_LOADED, env_instance
+from config import settings
 
-# --- Initialize AI ---
-load_ai_model()
-
-SERVER_URL = "http://localhost:7860"
-session = SessionManager()
-evaluator = ProductEvaluator()
+SERVER_URL = settings.server_url
 qgen = QuestionGenerator()
 
 COLORS = {
@@ -217,11 +211,24 @@ def generate_chat_html(chat_history):
     html += "</div>"
     return html
 
-def start_session(student_name, subject):
+def _get_runtime(runtime_state):
+    if isinstance(runtime_state, dict):
+        session = runtime_state.get("session")
+        env = runtime_state.get("env")
+        evaluator = runtime_state.get("evaluator")
+        if session and env and evaluator:
+            return session, env, evaluator
+    session = SessionManager()
+    env = AdaptiveTutorEnv()
+    evaluator = ProductEvaluator()
+    return session, env, evaluator
+
+
+def start_session(student_name, subject, runtime_state):
+    session, env, evaluator = _get_runtime(runtime_state)
     session.reset(student_name or "Student", subject)
     profile_loaded = session.load_profile()
-    # Direct call to shared env instance instead of requests.post to avoid deadlocks
-    env_instance.reset()
+    env.reset()
     
     weak = session.get_weak_concepts()
     weak_concept = weak[0][0] if weak else "general"
@@ -275,11 +282,13 @@ def start_session(student_name, subject):
         ⚠️ Ollama not detected - running in offline mode (simplified evaluation)
     </div>"""
     
-    return chat_html, mastery_html, stats_html, offline_warning
+    next_state = {"session": session, "env": env, "evaluator": evaluator}
+    return chat_html, mastery_html, stats_html, offline_warning, next_state
 
-def submit_answer(answer_text):
+def submit_answer(answer_text, runtime_state):
+    session, env, evaluator = _get_runtime(runtime_state)
     if not answer_text.strip():
-        return generate_chat_html(session.chat_history), "", ""
+        return generate_chat_html(session.chat_history), "", "", runtime_state
     
     session.add_message("human", answer_text)
     session.questions_asked += 1
@@ -326,8 +335,8 @@ def submit_answer(answer_text):
             difficulty=3 if q_data.get("difficulty") == "medium" else (1 if q_data.get("difficulty") == "easy" else 5),
             target_concept=concept
         )
-        env_instance.step(action)
-    except:
+        env.step(action)
+    except Exception:
         pass
     
     if session.is_complete():
@@ -343,7 +352,7 @@ def submit_answer(answer_text):
         weak = session.get_weak_concepts()
         next_concept = weak[0][0] if weak else concept
         # Decision making: Rule-based or RL-AI driven
-        if ai_model is not None:
+        if shared.ai_model is not None:
             # We wrap the session in a dict for compatibility with the OpenEnv-like observation
             current_obs = {
                 "difficulty": 1 if session.streak < 1 else (2 if session.streak < 3 else 3),
@@ -405,13 +414,19 @@ def submit_answer(answer_text):
         </div>
     </div>"""
     
-    return chat_html, mastery_html, stats_html
+    next_state = {"session": session, "env": env, "evaluator": evaluator}
+    return chat_html, mastery_html, stats_html, next_state
 
 # Shared model is already loaded at the top
-from shared import ai_model, ai_tokenizer
+import shared
 
 def get_ai_action(session, current_obs):
     """Use the trained RL model to decide the next tutoring action."""
+    if shared.ai_model is None and settings.lazy_load_ai:
+        load_ai_model()
+
+    ai_model = shared.ai_model
+    ai_tokenizer = shared.ai_tokenizer
     if ai_model is None:
         return "medium", "ask_question"
     
@@ -448,11 +463,87 @@ Generate a simple question.
 
 
 
-def send_teacher_note(note):
+def send_teacher_note(note, runtime_state):
+    session, env, evaluator = _get_runtime(runtime_state)
     if note.strip():
         session.add_teacher_note(note)
-        return f"✅ Note sent to AI: '{note}'"
-    return ""
+        return f"✅ Note sent to AI: '{note}'", {"session": session, "env": env, "evaluator": evaluator}
+    return "", {"session": session, "env": env, "evaluator": evaluator}
+
+def run_demo_sim(speed_val):
+    """Run an autonomous simulation of the AI tutor teaching a student."""
+    env = AdaptiveTutorEnv()
+    obs = env.reset()
+    
+    total_reward = 0
+    steps = 0
+    log_text = "🚀 Starting RL Simulation Episode...\n"
+    history = []
+    
+    # Simple mock session for the evaluator logic if needed
+    from core.session_manager import SessionManager
+    mock_session = SessionManager("Simulated Student", obs.current_topic)
+    
+    fig, ax = plt.subplots(figsize=(6, 3), facecolor='#0F172A')
+    ax.set_facecolor('#1E293B')
+    
+    for _ in range(env.MAX_STEPS):
+        # AI Logic to pick action
+        difficulty_str, action_type = get_ai_action(mock_session, obs.model_dump())
+        
+        # Convert difficulty string to numeric for the environment
+        diff_map = {"easy": 1, "medium": 3, "hard": 5}
+        numeric_diff = diff_map.get(difficulty_str, 3)
+        
+        # Pick a concept based on mastery
+        concepts = list(obs.student_profile.keys())
+        target_concept = random.choice(concepts) if concepts else ""
+        
+        # Build action
+        action = TutorAction(
+            action_type=action_type,
+            difficulty=numeric_diff,
+            target_concept=target_concept
+        )
+        
+        # Step the environment
+        obs = env.step(action)
+        total_reward += obs.reward
+        steps += 1
+        
+        # Update mock session with new mastery
+        for c, m in obs.student_profile.items():
+            mock_session.knowledge_map[c] = m
+            
+        # Log the interaction
+        status = "✅ Correct" if obs.student_correct else "❌ Wrong"
+        log_text += f"Step {steps}: {action_type} ({difficulty_str}) -> {status} | Reward: {obs.reward:.2f}\n"
+        
+        # Update chart data
+        history.append({"Step": steps, "Cumulative": total_reward})
+        df = pd.DataFrame(history)
+        
+        # Generate plot
+        plt.clf()
+        plt.plot(df["Step"], df["Cumulative"], marker='o', color='#6C63FF', linewidth=2)
+        plt.title("Cumulative Reward Progression", color='white')
+        plt.xlabel("Step", color='white')
+        plt.ylabel("Total Reward", color='white')
+        plt.tick_params(colors='white')
+        plt.grid(True, alpha=0.1)
+        plt.tight_layout()
+        
+        avg_mastery = sum(obs.student_profile.values()) / len(obs.student_profile) if obs.student_profile else 0
+        
+        yield total_reward, steps, avg_mastery * 100, log_text, plt.gcf()
+        
+        if obs.done:
+            break
+            
+        time.sleep(1.1 / speed_val)
+    
+    log_text += f"\n🏁 Episode Complete! Total Reward: {total_reward:.2f}"
+    yield total_reward, steps, avg_mastery * 100, log_text, plt.gcf()
 
 with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
     
@@ -491,6 +582,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             offline_banner = gr.HTML("")
             
             with gr.Row():
+                runtime_state = gr.State(value={})
                 with gr.Column(scale=1):
                     gr.HTML("<h3 style='color: #F1F5F9;'>👤 Student Profile</h3>")
                     student_name = gr.Textbox(
@@ -552,26 +644,26 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             
             start_btn.click(
                 start_session,
-                inputs=[student_name, subject],
-                outputs=[chat_display, mastery_display, stats_display, offline_banner]
+                inputs=[student_name, subject, runtime_state],
+                outputs=[chat_display, mastery_display, stats_display, offline_banner, runtime_state]
             )
             
             submit_btn.click(
                 submit_answer,
-                inputs=[answer_input],
-                outputs=[chat_display, mastery_display, stats_display]
+                inputs=[answer_input, runtime_state],
+                outputs=[chat_display, mastery_display, stats_display, runtime_state]
             )
             
             answer_input.submit(
                 submit_answer,
-                inputs=[answer_input],
-                outputs=[chat_display, mastery_display, stats_display]
+                inputs=[answer_input, runtime_state],
+                outputs=[chat_display, mastery_display, stats_display, runtime_state]
             )
             
             teacher_btn.click(
                 send_teacher_note,
-                inputs=[teacher_note_input],
-                outputs=[teacher_status]
+                inputs=[teacher_note_input, runtime_state],
+                outputs=[teacher_status, runtime_state]
             )
         
         with gr.Tab("🤖 Demo Mode (RL Simulation)", id="demo"):
@@ -608,18 +700,24 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             )
             
             reward_chart = gr.Plot(label="Live Reward Chart")
+            
+            run_demo_btn.click(
+                run_demo_sim,
+                inputs=[speed],
+                outputs=[reward_display, step_display, mastery_pct, demo_log, reward_chart]
+            )
         
         with gr.Tab("📊 Results & Training", id="results"):
             
             gr.HTML("<h2 style='color: #F1F5F9; padding: 20px 0 10px;'>Training Evidence</h2>")
             
             with gr.Row():
-                gr.Image("reward_curve.png", label="Reward Improvement", 
+                gr.Image("assets/reward_curve.png", label="Reward Improvement", 
                          show_label=True)
-                gr.Image("reward_breakdown.png", label="Reward Breakdown Per Step",
+                gr.Image("assets/reward_breakdown.png", label="Reward Breakdown Per Step",
                          show_label=True)
             
-            gr.Image("mastery_progression.png", label="Student Mastery Progression")
+            gr.Image("assets/mastery_progression.png", label="Student Mastery Progression")
             
             gr.HTML("""
             <div style='background: #1E293B; border-radius: 15px; 
@@ -651,4 +749,4 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
     """)
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    demo.launch(server_name=settings.app_host, server_port=settings.app_port)

@@ -1,6 +1,10 @@
 import os
 import sys
 import httpx
+import json
+import shutil
+import hashlib
+from datetime import datetime
 
 # Fix Windows console encoding
 if sys.platform == "win32":
@@ -13,9 +17,13 @@ from trl import GRPOTrainer, GRPOConfig
 from datasets import Dataset
 
 from shared import TutorAction
+from config import settings
 
-BASE_URL = os.getenv("ADAPTIVE_TUTOR_ENV_URL", "https://http-pruthvi-adaptive-tutor-ai.hf.space")
-MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
+BASE_URL = settings.env_url
+MODEL_NAME = settings.ai_model_name
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SELF_IMPROVE_DATASET_PATH = os.path.join(PROJECT_ROOT, "outputs", "self_improve_dataset.jsonl")
+MODEL_REGISTRY_DIR = settings.model_registry_dir
 
 def _step_env_once(completion: str) -> float:
     """Get reward by sending one action to the OpenEnv HTTP server."""
@@ -76,6 +84,81 @@ Generate ONE question only. No explanation.
                 prompts.append({"prompt": prompt})
     return Dataset.from_list(prompts * 3)
 
+def load_dataset():
+    """Prefer self-improvement dataset if available; fallback to synthetic prompts."""
+    if os.path.exists(SELF_IMPROVE_DATASET_PATH):
+        try:
+            dataset = Dataset.from_json(SELF_IMPROVE_DATASET_PATH)
+            if len(dataset) > 0 and "prompt" in dataset.column_names:
+                print(f"Using self-improvement dataset: {SELF_IMPROVE_DATASET_PATH} ({len(dataset)} rows)")
+                return dataset
+            print("Self-improvement dataset is empty/invalid. Falling back to synthetic dataset.")
+        except Exception as e:
+            print(f"Failed to load self-improvement dataset: {e}")
+            print("Falling back to synthetic dataset.")
+    dataset = make_dataset()
+    print(f"Using synthetic dataset ({len(dataset)} rows)")
+    return dataset
+
+
+def _file_hash(path: str) -> str:
+    if not os.path.exists(path):
+        return ""
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _evaluate_candidate(dataset_len: int) -> float:
+    """
+    Lightweight offline gate for pilot.
+    Score combines dataset coverage and environment connectivity.
+    """
+    coverage = min(1.0, dataset_len / 300.0)
+    env_ok = _step_env_once("What is one key concept we should review next?") > -10
+    return round((0.7 * coverage) + (0.3 if env_ok else 0.0), 3)
+
+
+def _register_model(model_output_dir: str, dataset_len: int) -> None:
+    os.makedirs(MODEL_REGISTRY_DIR, exist_ok=True)
+    candidates_dir = os.path.join(MODEL_REGISTRY_DIR, "candidates")
+    active_dir = os.path.join(MODEL_REGISTRY_DIR, "active")
+    os.makedirs(candidates_dir, exist_ok=True)
+    os.makedirs(active_dir, exist_ok=True)
+
+    run_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    candidate_path = os.path.join(candidates_dir, run_id)
+    shutil.copytree(model_output_dir, candidate_path, dirs_exist_ok=True)
+
+    eval_score = _evaluate_candidate(dataset_len)
+    metadata = {
+        "run_id": run_id,
+        "created_at_utc": datetime.utcnow().isoformat(),
+        "base_model": MODEL_NAME,
+        "dataset_path": SELF_IMPROVE_DATASET_PATH if os.path.exists(SELF_IMPROVE_DATASET_PATH) else "synthetic",
+        "dataset_hash": _file_hash(SELF_IMPROVE_DATASET_PATH),
+        "dataset_rows": dataset_len,
+        "min_eval_score": settings.min_eval_score,
+        "eval_score": eval_score,
+        "promoted": eval_score >= settings.min_eval_score,
+    }
+    with open(os.path.join(candidate_path, "metadata.json"), "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+
+    if metadata["promoted"]:
+        promoted_path = os.path.join(active_dir, "model")
+        if os.path.exists(promoted_path):
+            shutil.rmtree(promoted_path)
+        shutil.copytree(candidate_path, promoted_path)
+        print(f"✅ Candidate promoted to active model. score={eval_score}")
+    else:
+        print(f"⚠ Candidate not promoted. score={eval_score} min_required={settings.min_eval_score}")
+
 def train():
     print(f"Checking for GPU...")
     if not torch.cuda.is_available():
@@ -104,7 +187,7 @@ def train():
         trust_remote_code=True
     )
 
-    dataset = make_dataset()
+    dataset = load_dataset()
 
     # GRPO Config - Optimized for local 4GB-8GB VRAM
     config = GRPOConfig(
@@ -132,9 +215,11 @@ def train():
     trainer.train()
 
     # Save
-    model.save_pretrained("./adaptive_tutor_trained")
-    tokenizer.save_pretrained("./adaptive_tutor_trained")
-    print("✅ Training complete! Model saved to ./adaptive_tutor_trained")
+    output_dir = os.path.join(PROJECT_ROOT, "adaptive_tutor_trained")
+    model.save_pretrained(output_dir)
+    tokenizer.save_pretrained(output_dir)
+    _register_model(output_dir, len(dataset))
+    print(f"✅ Training complete! Model saved to {output_dir}")
 
 if __name__ == "__main__":
     train()

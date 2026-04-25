@@ -8,13 +8,17 @@ progress metrics for iterative model improvement.
 import glob
 import json
 import os
+import hashlib
 from collections import defaultdict
+from datetime import datetime
 
 
-LOGS_DIR = "logs"
-OUTPUT_DIR = "outputs"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "outputs")
 OUTPUT_DATASET = os.path.join(OUTPUT_DIR, "self_improve_dataset.jsonl")
 OUTPUT_METRICS = os.path.join(OUTPUT_DIR, "self_improve_metrics.json")
+DATASET_VERSIONS_DIR = os.path.join(OUTPUT_DIR, "dataset_versions")
 
 
 def _iter_log_records():
@@ -32,6 +36,7 @@ def _iter_log_records():
 
 def build_dataset():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(DATASET_VERSIONS_DIR, exist_ok=True)
     rows = []
     per_student = defaultdict(lambda: {"turns": 0, "correct": 0, "gain_sum": 0.0})
 
@@ -90,6 +95,32 @@ def build_dataset():
     with open(OUTPUT_METRICS, "w", encoding="utf-8") as f:
         json.dump(metrics, f, indent=2)
 
+    digest = hashlib.sha256()
+    with open(OUTPUT_DATASET, "rb") as f:
+        digest.update(f.read())
+    dataset_hash = digest.hexdigest()
+
+    version_id = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    version_dir = os.path.join(DATASET_VERSIONS_DIR, version_id)
+    os.makedirs(version_dir, exist_ok=True)
+    version_dataset = os.path.join(version_dir, "dataset.jsonl")
+    version_meta = os.path.join(version_dir, "metadata.json")
+    with open(OUTPUT_DATASET, "r", encoding="utf-8") as src, open(version_dataset, "w", encoding="utf-8") as dst:
+        dst.write(src.read())
+    with open(version_meta, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "version_id": version_id,
+                "created_at_utc": datetime.utcnow().isoformat(),
+                "rows": len(rows),
+                "dataset_hash": dataset_hash,
+            },
+            f,
+            indent=2,
+        )
+
+    metrics["dataset_hash"] = dataset_hash
+    metrics["dataset_version"] = version_id
     return metrics
 
 

@@ -9,10 +9,20 @@ env/
 .env.local
 .vscode/
 .idea/
+
+# Ignore images generally
+# Ignore images generally
 *.png
 *.jpg
 *.jpeg
 *.gif
+
+# But ALLOW them in assets/
+!assets/
+
+# But ALLOW them in assets/
+!assets/
+
 *.md
 !README.md
 !pitch.md

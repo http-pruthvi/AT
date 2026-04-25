@@ -3,9 +3,10 @@ product_evaluator.py - Evaluates human student answers using LLMs (or fallback).
 """
 import json
 import httpx
+from config import settings
 
-OLLAMA_URL = "http://localhost:11434"
-OLLAMA_MODEL = "qwen2.5:0.5b"
+OLLAMA_URL = settings.ollama_url
+OLLAMA_MODEL = settings.ollama_model
 
 class ProductEvaluator:
     def __init__(self):
@@ -66,7 +67,7 @@ Student Answer: {student_answer}
                     "encouragement": str(data.get("encouragement", "Keep it up!")),
                     "mastery_delta": float(data.get("mastery_delta", 0.05))
                 }
-        except:
+        except Exception:
             pass
         return self._evaluate_with_fallback(correct_answer, student_answer)
 

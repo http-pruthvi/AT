@@ -2,12 +2,48 @@ import json
 import os
 import random
 import time
+import tempfile
+import threading
+from config import settings
+
+
+_FILE_LOCKS = {}
+_LOCK_GUARD = threading.Lock()
+
+
+def _get_lock(path: str) -> threading.Lock:
+    with _LOCK_GUARD:
+        if path not in _FILE_LOCKS:
+            _FILE_LOCKS[path] = threading.Lock()
+        return _FILE_LOCKS[path]
+
+
+def _atomic_write_json(path: str, payload: dict) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    lock = _get_lock(path)
+    with lock:
+        fd, temp_path = tempfile.mkstemp(prefix="tmp_", suffix=".json", dir=os.path.dirname(path))
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+            os.replace(temp_path, path)
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+
+def _append_jsonl(path: str, record: dict) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    lock = _get_lock(path)
+    with lock:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=True) + "\n")
 
 class SessionManager:
     """Manages human student session state"""
     def __init__(self):
-        self.profiles_dir = "profiles"
-        self.logs_dir = "logs"
+        self.profiles_dir = settings.profiles_dir
+        self.logs_dir = settings.logs_dir
         os.makedirs(self.profiles_dir, exist_ok=True)
         os.makedirs(self.logs_dir, exist_ok=True)
         self.reset()
@@ -163,8 +199,7 @@ class SessionManager:
             "history": history[-200:],
         }
         try:
-            with open(self._profile_path(), "w", encoding="utf-8") as f:
-                json.dump(payload, f, indent=2)
+            _atomic_write_json(self._profile_path(), payload)
             return True
         except Exception:
             return False
@@ -200,8 +235,10 @@ class SessionManager:
             "learning_metrics": self.get_learning_metrics(),
         }
         try:
-            with open(self._interaction_log_path(), "a", encoding="utf-8") as f:
-                f.write(json.dumps(record, ensure_ascii=True) + "\n")
+            if settings.privacy_redact_answers:
+                record["student_answer"] = "[REDACTED]"
+                record["correct_answer"] = "[REDACTED]"
+            _append_jsonl(self._interaction_log_path(), record)
             return True
         except Exception:
             return False
