@@ -1,0 +1,61 @@
+{
+  "subject": "history",
+  "expert": "Prof. Khan",
+  "levels": {
+    "1": {
+      "name": "Basic Facts",
+      "concepts": ["dates", "people", "places", "events"],
+      "questions": [
+        {"id": "h1_1", "question": "In what year did World War II end?", "answer": "1945", "concept": "dates", "hint": "It ended after the atomic bombs were dropped on Japan."},
+        {"id": "h1_2", "question": "Who was the first President of the United States?", "answer": "George Washington", "concept": "people", "hint": "He was also the commander-in-chief during the Revolutionary War."},
+        {"id": "h1_3", "question": "What ancient civilization built the pyramids at Giza?", "answer": "Ancient Egypt", "concept": "places", "hint": "This civilization flourished along the Nile River."},
+        {"id": "h1_4", "question": "What was the Renaissance?", "answer": "A cultural movement in Europe (14th-17th century) marking the transition from medieval to modern times, emphasizing art, science, and humanism.", "concept": "events", "hint": "The word means 'rebirth' in French."},
+        {"id": "h1_5", "question": "Who wrote the Declaration of Independence?", "answer": "Thomas Jefferson", "concept": "people", "hint": "He later became the third US President."}
+      ]
+    },
+    "2": {
+      "name": "Cause and Effect",
+      "concepts": ["revolution_causes", "war_consequences", "economic_impacts", "social_change"],
+      "questions": [
+        {"id": "h2_1", "question": "What were the main causes of the French Revolution?", "answer": "Financial crisis, social inequality (Three Estates system), Enlightenment ideas, food shortages, and weak leadership of Louis XVI.", "concept": "revolution_causes", "hint": "Think about economic, social, and intellectual factors."},
+        {"id": "h2_2", "question": "How did the Treaty of Versailles contribute to World War II?", "answer": "Harsh reparations, territorial losses, and military restrictions humiliated Germany, creating economic hardship and resentment that fueled the rise of Hitler and Nazi ideology.", "concept": "war_consequences", "hint": "Think about how the losing side felt about the peace terms."},
+        {"id": "h2_3", "question": "What effect did the Industrial Revolution have on urbanization?", "answer": "Mass migration from rural areas to cities as factories offered employment, leading to rapid urban growth, overcrowding, and new social classes.", "concept": "economic_impacts", "hint": "Where were the factories built, and who came to work in them?"},
+        {"id": "h2_4", "question": "How did the printing press change European society?", "answer": "Made books affordable and widespread, increasing literacy, spreading new ideas quickly, enabling the Reformation, and undermining the Church's monopoly on knowledge.", "concept": "social_change", "hint": "Think about access to information before and after Gutenberg."},
+        {"id": "h2_5", "question": "What caused the fall of the Roman Empire?", "answer": "Combination of internal decay (corruption, economic troubles, overexpansion) and external pressures (barbarian invasions, military spending).", "concept": "war_consequences", "hint": "Consider both internal weaknesses and external threats."}
+      ]
+    },
+    "3": {
+      "name": "Multiple Perspectives",
+      "concepts": ["colonialism", "civil_rights", "imperialism", "nationalism"],
+      "questions": [
+        {"id": "h3_1", "question": "Describe the American Revolution from both the British and Colonial perspectives.", "answer": "British: colonies were ungrateful subjects refusing to pay fair taxes for protection. Colonists: being taxed without representation, their natural rights were being violated by a tyrannical monarchy.", "concept": "colonialism", "hint": "How did each side justify their position?"},
+        {"id": "h3_2", "question": "How did different groups view the partition of India in 1947?", "answer": "Indian National Congress: reluctant acceptance to prevent civil war. Muslim League: necessary for Muslim self-determination. Many citizens: traumatic displacement, violence, and loss.", "concept": "nationalism", "hint": "Consider the political leaders and the common people."},
+        {"id": "h3_3", "question": "Compare how MLK Jr. and Malcolm X approached civil rights.", "answer": "MLK advocated nonviolent resistance and integration. Malcolm X initially supported Black separatism and self-defense. Both evolved: MLK grew more radical, Malcolm X moved toward unity after his pilgrimage.", "concept": "civil_rights", "hint": "How did their strategies differ and converge over time?"},
+        {"id": "h3_4", "question": "How was European imperialism in Africa viewed by Europeans vs. Africans?", "answer": "Europeans: 'civilizing mission,' economic opportunity, strategic advantage. Africans: exploitation, cultural destruction, loss of sovereignty and resources.", "concept": "imperialism", "hint": "Think about 'the White Man's Burden' vs. lived experience."},
+        {"id": "h3_5", "question": "How did the dropping of atomic bombs on Japan look from American vs. Japanese perspectives?", "answer": "American: necessary to end the war and save lives (both Allied and Japanese). Japanese: horrific act of mass destruction on civilians, still debated as a war crime.", "concept": "civil_rights", "hint": "Consider military strategy vs. humanitarian impact."}
+      ]
+    },
+    "4": {
+      "name": "Connecting Events",
+      "concepts": ["global_connections", "long_term_trends", "comparative_history", "thematic_analysis"],
+      "questions": [
+        {"id": "h4_1", "question": "How did the Silk Road connect the fall of Rome to the rise of Islam?", "answer": "As Rome declined, trade routes shifted. Arab merchants filled the power vacuum along key trade routes, and Islam spread along these same paths, connecting cultures from Spain to China.", "concept": "global_connections", "hint": "Think about trade, power, and cultural exchange."},
+        {"id": "h4_2", "question": "Trace how the ideas of the Enlightenment influenced the American, French, and Haitian revolutions.", "answer": "Enlightenment ideas of natural rights, social contract, and popular sovereignty inspired all three. Each adapted these ideas: Americans emphasized liberty, French emphasized equality, Haitians extended liberty to enslaved people.", "concept": "long_term_trends", "hint": "Locke, Rousseau, and Montesquieu influenced all three."},
+        {"id": "h4_3", "question": "Compare the Russian Revolution (1917) and the Chinese Revolution (1949) in terms of ideology, leadership, and outcome.", "answer": "Both were communist revolutions but differed: Russia was urban-worker focused (Lenin), China was peasant-based (Mao). Both created one-party states but with different economic models initially.", "concept": "comparative_history", "hint": "Compare the social bases and strategies of each revolution."},
+        {"id": "h4_4", "question": "How did World War I set the stage for decolonization in Asia and Africa?", "answer": "WWI weakened European powers, exposed hypocrisy of 'civilizing mission' when colonial subjects fought in the war, spread nationalist ideas, and created the League of Nations mandate system.", "concept": "thematic_analysis", "hint": "Think about the war's impact on European power and colonial expectations."},
+        {"id": "h4_5", "question": "Connect the Black Death (1347), the fall of feudalism, and the Renaissance.", "answer": "The plague killed 30-60% of Europe's population, creating labor shortages that empowered peasants, weakened feudal lords, shifted economic power to merchants, and contributed to the cultural flowering of the Renaissance.", "concept": "long_term_trends", "hint": "How does massive population loss change economics and society?"}
+      ]
+    },
+    "5": {
+      "name": "Counterfactual Reasoning",
+      "concepts": ["alternative_history", "historical_contingency", "turning_points", "critical_analysis"],
+      "questions": [
+        {"id": "h5_1", "question": "What if the D-Day invasion at Normandy had failed? How might WWII have ended differently?", "answer": "Germany could have reinforced the Western Front, possibly developing V-weapons or jet aircraft further. The war might have lasted years longer. The USSR might have conquered more of Europe. The Cold War dynamics would have shifted dramatically.", "concept": "alternative_history", "hint": "Consider the military, political, and technological implications."},
+        {"id": "h5_2", "question": "Was the American Civil War inevitable, or could slavery have ended peacefully? Argue both sides.", "answer": "Inevitable: deep economic, cultural, and moral divisions made compromise impossible. Avoidable: other nations abolished slavery without war (British Empire 1833). However, the US Constitution's protection of slavery and states' rights made peaceful abolition uniquely difficult.", "concept": "historical_contingency", "hint": "Compare with how other nations ended slavery."},
+        {"id": "h5_3", "question": "If the Library of Alexandria had never been destroyed, how might that have changed the course of scientific development?", "answer": "The preserved knowledge could have accelerated scientific progress by centuries, potentially avoiding the 'Dark Ages' knowledge gap. However, knowledge alone doesn't guarantee progress—social, economic, and political conditions also matter.", "concept": "alternative_history", "hint": "What knowledge was lost, and what conditions are needed for science?"},
+        {"id": "h5_4", "question": "Evaluate: 'The atomic bomb ended WWII.' Is this a sufficient historical explanation?", "answer": "Insufficient alone. Must also consider: Soviet entry into the Pacific war, Japan's already-deteriorating military position, the role of conventional bombing, internal Japanese politics, and the Emperor's personal decision. The bombs were a factor but not the sole cause.", "concept": "critical_analysis", "hint": "What other factors were at play in August 1945?"},
+        {"id": "h5_5", "question": "If the Ottoman Empire had not collapsed after WWI, how might the modern Middle East look different?", "answer": "No arbitrary colonial borders drawn by Sykes-Picot, potentially fewer ethnic/sectarian conflicts, no mandate system, different path for Arab nationalism. However, internal reform pressures and ethnic tensions existed within the empire already.", "concept": "turning_points", "hint": "Think about borders, nationalism, and colonial influence."}
+      ]
+    }
+  }
+}

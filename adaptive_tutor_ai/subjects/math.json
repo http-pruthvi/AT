@@ -1,0 +1,211 @@
+{
+  "subject": "math",
+  "expert": "Dr. Sharma",
+  "levels": {
+    "1": {
+      "name": "Basic Arithmetic",
+      "concepts": ["addition", "subtraction", "multiplication", "division"],
+      "questions": [
+        {
+          "id": "m1_1",
+          "question": "What is 247 + 386?",
+          "answer": "633",
+          "concept": "addition",
+          "hint": "Add the ones, tens, and hundreds places separately."
+        },
+        {
+          "id": "m1_2",
+          "question": "What is 512 - 278?",
+          "answer": "234",
+          "concept": "subtraction",
+          "hint": "You may need to borrow from the tens place."
+        },
+        {
+          "id": "m1_3",
+          "question": "What is 23 × 17?",
+          "answer": "391",
+          "concept": "multiplication",
+          "hint": "Break 17 into 10 + 7 and multiply each part."
+        },
+        {
+          "id": "m1_4",
+          "question": "What is 864 ÷ 12?",
+          "answer": "72",
+          "concept": "division",
+          "hint": "Try dividing 864 by 12 using long division."
+        },
+        {
+          "id": "m1_5",
+          "question": "If you buy 3 notebooks at $4.50 each and pay with a $20 bill, how much change do you get?",
+          "answer": "$6.50",
+          "concept": "multiplication",
+          "hint": "First find the total cost, then subtract from $20."
+        }
+      ]
+    },
+    "2": {
+      "name": "Fractions and Decimals",
+      "concepts": ["fractions", "decimals", "fraction_operations"],
+      "questions": [
+        {
+          "id": "m2_1",
+          "question": "Simplify the fraction 24/36 to its lowest terms.",
+          "answer": "2/3",
+          "concept": "fractions",
+          "hint": "Find the GCD of 24 and 36."
+        },
+        {
+          "id": "m2_2",
+          "question": "What is 3/4 + 2/5?",
+          "answer": "23/20 or 1 3/20",
+          "concept": "fraction_operations",
+          "hint": "Find a common denominator first — try 20."
+        },
+        {
+          "id": "m2_3",
+          "question": "Convert 0.375 to a fraction in simplest form.",
+          "answer": "3/8",
+          "concept": "decimals",
+          "hint": "0.375 = 375/1000. Now simplify."
+        },
+        {
+          "id": "m2_4",
+          "question": "What is 5/6 × 3/10?",
+          "answer": "1/4",
+          "concept": "fraction_operations",
+          "hint": "Multiply numerators and denominators, then simplify."
+        },
+        {
+          "id": "m2_5",
+          "question": "A recipe needs 2/3 cup of flour. If you want to make 1.5 batches, how much flour do you need?",
+          "answer": "1 cup",
+          "concept": "fractions",
+          "hint": "Multiply 2/3 by 3/2."
+        }
+      ]
+    },
+    "3": {
+      "name": "Algebra Basics",
+      "concepts": ["linear_equations", "expressions", "inequalities"],
+      "questions": [
+        {
+          "id": "m3_1",
+          "question": "Solve for x: 3x + 7 = 22",
+          "answer": "x = 5",
+          "concept": "linear_equations",
+          "hint": "Subtract 7 from both sides, then divide by 3."
+        },
+        {
+          "id": "m3_2",
+          "question": "Simplify the expression: 4(2x - 3) + 5x",
+          "answer": "13x - 12",
+          "concept": "expressions",
+          "hint": "Distribute the 4 first, then combine like terms."
+        },
+        {
+          "id": "m3_3",
+          "question": "Solve for y: 2y - 5 > 9",
+          "answer": "y > 7",
+          "concept": "inequalities",
+          "hint": "Add 5 to both sides, then divide by 2."
+        },
+        {
+          "id": "m3_4",
+          "question": "If 2(x + 3) = x + 10, what is x?",
+          "answer": "x = 4",
+          "concept": "linear_equations",
+          "hint": "Expand the left side and then isolate x."
+        },
+        {
+          "id": "m3_5",
+          "question": "A phone plan costs $25/month plus $0.10 per text. Write an expression for the monthly cost with t texts, and find the cost for 150 texts.",
+          "answer": "C = 25 + 0.10t; $40",
+          "concept": "expressions",
+          "hint": "Substitute t = 150 into the expression."
+        }
+      ]
+    },
+    "4": {
+      "name": "Quadratic Equations",
+      "concepts": ["quadratics", "factoring", "quadratic_formula"],
+      "questions": [
+        {
+          "id": "m4_1",
+          "question": "Factor and solve: x² - 5x + 6 = 0",
+          "answer": "x = 2 or x = 3",
+          "concept": "factoring",
+          "hint": "Find two numbers that multiply to 6 and add to -5."
+        },
+        {
+          "id": "m4_2",
+          "question": "Use the quadratic formula to solve: 2x² + 3x - 5 = 0",
+          "answer": "x = 1 or x = -5/2",
+          "concept": "quadratic_formula",
+          "hint": "a=2, b=3, c=-5. Discriminant = 9 + 40 = 49."
+        },
+        {
+          "id": "m4_3",
+          "question": "What is the vertex of the parabola y = x² - 4x + 7?",
+          "answer": "(2, 3)",
+          "concept": "quadratics",
+          "hint": "Vertex x-coordinate = -b/(2a). Then plug back in for y."
+        },
+        {
+          "id": "m4_4",
+          "question": "A ball is thrown upward with h(t) = -16t² + 64t + 5. What is the maximum height?",
+          "answer": "69 feet",
+          "concept": "quadratics",
+          "hint": "Maximum occurs at t = -b/(2a) = 2 seconds."
+        },
+        {
+          "id": "m4_5",
+          "question": "Prove that x² + 6x + 9 is a perfect square trinomial and factor it.",
+          "answer": "(x + 3)²",
+          "concept": "factoring",
+          "hint": "Check if the middle term equals 2 × √(first) × √(last)."
+        }
+      ]
+    },
+    "5": {
+      "name": "Introduction to Calculus",
+      "concepts": ["limits", "derivatives", "integrals"],
+      "questions": [
+        {
+          "id": "m5_1",
+          "question": "Find the limit: lim(x→3) (x² - 9)/(x - 3)",
+          "answer": "6",
+          "concept": "limits",
+          "hint": "Factor the numerator as (x-3)(x+3) and cancel."
+        },
+        {
+          "id": "m5_2",
+          "question": "Find the derivative of f(x) = 3x⁴ - 2x² + 7x - 1",
+          "answer": "f'(x) = 12x³ - 4x + 7",
+          "concept": "derivatives",
+          "hint": "Apply the power rule to each term."
+        },
+        {
+          "id": "m5_3",
+          "question": "Find ∫(4x³ + 6x) dx",
+          "answer": "x⁴ + 3x² + C",
+          "concept": "integrals",
+          "hint": "Use the power rule for integration: increase exponent by 1, divide by new exponent."
+        },
+        {
+          "id": "m5_4",
+          "question": "If f(x) = x³, prove from first principles that f'(x) = 3x².",
+          "answer": "Using limit definition: lim(h→0) [(x+h)³ - x³]/h = lim(h→0) [3x²h + 3xh² + h³]/h = 3x²",
+          "concept": "derivatives",
+          "hint": "Expand (x+h)³ using the binomial theorem."
+        },
+        {
+          "id": "m5_5",
+          "question": "A particle moves along a line with velocity v(t) = 6t² - 4t + 1. Find the displacement from t=0 to t=2.",
+          "answer": "10 units",
+          "concept": "integrals",
+          "hint": "Integrate v(t) from 0 to 2: ∫(6t²-4t+1)dt = [2t³-2t²+t] from 0 to 2."
+        }
+      ]
+    }
+  }
+}

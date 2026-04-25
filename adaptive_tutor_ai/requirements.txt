@@ -1,0 +1,8 @@
+openenv-core
+fastapi
+uvicorn
+pydantic
+numpy
+httpx
+gradio
+pandas

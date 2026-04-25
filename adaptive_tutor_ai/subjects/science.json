@@ -1,0 +1,61 @@
+{
+  "subject": "science",
+  "expert": "Ms. Patel",
+  "levels": {
+    "1": {
+      "name": "Definitions and Recall",
+      "concepts": ["atoms", "cells", "forces", "energy"],
+      "questions": [
+        {"id": "s1_1", "question": "What is the basic unit of life?", "answer": "The cell", "concept": "cells", "hint": "Think about what all living organisms are made of."},
+        {"id": "s1_2", "question": "What are the three subatomic particles found in an atom?", "answer": "Protons, neutrons, and electrons", "concept": "atoms", "hint": "Two are in the nucleus, one orbits it."},
+        {"id": "s1_3", "question": "Define 'force' in physics.", "answer": "A push or pull on an object that can change its motion", "concept": "forces", "hint": "Think about what causes objects to move or stop."},
+        {"id": "s1_4", "question": "What is the law of conservation of energy?", "answer": "Energy cannot be created or destroyed, only transformed", "concept": "energy", "hint": "Think about what happens to energy during transformations."},
+        {"id": "s1_5", "question": "What organelle is responsible for photosynthesis?", "answer": "Chloroplast", "concept": "cells", "hint": "It contains chlorophyll."}
+      ]
+    },
+    "2": {
+      "name": "Process Understanding",
+      "concepts": ["photosynthesis", "water_cycle", "digestion", "electricity"],
+      "questions": [
+        {"id": "s2_1", "question": "Write the chemical equation for photosynthesis.", "answer": "6CO2 + 6H2O + light -> C6H12O6 + 6O2", "concept": "photosynthesis", "hint": "Carbon dioxide and water are converted using light energy."},
+        {"id": "s2_2", "question": "Explain the four main stages of the water cycle.", "answer": "Evaporation, condensation, precipitation, and collection", "concept": "water_cycle", "hint": "Follow a water droplet from ocean to sky and back."},
+        {"id": "s2_3", "question": "What happens during mechanical digestion in the stomach?", "answer": "Stomach muscles churn food, mixing it with gastric juices to form chyme", "concept": "digestion", "hint": "Think about the physical breakdown of food."},
+        {"id": "s2_4", "question": "Explain how a simple electric circuit works.", "answer": "Electrons flow from negative terminal through a conductor to a load and back, forming a closed loop", "concept": "electricity", "hint": "Current flows through a closed loop."},
+        {"id": "s2_5", "question": "Describe cellular respiration in one sentence.", "answer": "Cells break down glucose using oxygen to produce ATP, CO2, and water", "concept": "photosynthesis", "hint": "It is essentially the reverse of photosynthesis."}
+      ]
+    },
+    "3": {
+      "name": "Application",
+      "concepts": ["newtons_laws", "genetics", "chemical_reactions", "ecosystems"],
+      "questions": [
+        {"id": "s3_1", "question": "A 10 kg box is pushed with 50 N on a frictionless surface. What is its acceleration?", "answer": "5 m/s squared", "concept": "newtons_laws", "hint": "Use F = ma."},
+        {"id": "s3_2", "question": "Both parents are Bb for eye color. What is the probability of a blue-eyed (bb) child?", "answer": "25%", "concept": "genetics", "hint": "Draw a Punnett square."},
+        {"id": "s3_3", "question": "Balance: Fe + O2 -> Fe2O3", "answer": "4Fe + 3O2 -> 2Fe2O3", "concept": "chemical_reactions", "hint": "Count atoms on each side."},
+        {"id": "s3_4", "question": "In grass->rabbit->fox->eagle, what happens to foxes if rabbits are wiped out?", "answer": "Fox population decreases due to loss of food source", "concept": "ecosystems", "hint": "Think about predator-prey relationships."},
+        {"id": "s3_5", "question": "A car at 20 m/s brakes at -4 m/s2. How far before stopping?", "answer": "50 meters", "concept": "newtons_laws", "hint": "Use v2 = u2 + 2as."}
+      ]
+    },
+    "4": {
+      "name": "Analysis",
+      "concepts": ["evolution", "thermodynamics", "molecular_biology", "waves"],
+      "questions": [
+        {"id": "s4_1", "question": "Explain why Darwin's finches developed different beak shapes using natural selection.", "answer": "Different food sources on different islands selected for different beak shapes through adaptive radiation", "concept": "evolution", "hint": "Connect beak shape to food source to survival advantage."},
+        {"id": "s4_2", "question": "Why does ice melt at room temperature, thermodynamically?", "answer": "Heat flows from warmer surroundings to colder ice, breaking hydrogen bonds and causing solid-to-liquid phase transition", "concept": "thermodynamics", "hint": "Think about heat flow and bond breaking."},
+        {"id": "s4_3", "question": "A mutation changes codon UAC to UAG. What happens?", "answer": "UAG is a stop codon, causing premature termination and a truncated protein", "concept": "molecular_biology", "hint": "Look up what UAG codes for."},
+        {"id": "s4_4", "question": "Explain why we see a rainbow after rain using optics.", "answer": "Sunlight refracts into a raindrop, disperses into colors, reflects internally, and refracts again upon exit at different angles per wavelength", "concept": "waves", "hint": "Trace light through a water droplet."},
+        {"id": "s4_5", "question": "What limits bacterial growth in the stationary phase?", "answer": "Nutrient depletion, toxic waste accumulation, and limited space cause growth rate to equal death rate", "concept": "molecular_biology", "hint": "Think about resources and waste."}
+      ]
+    },
+    "5": {
+      "name": "Experiment Design",
+      "concepts": ["scientific_method", "experimental_design", "data_analysis", "hypothesis_testing"],
+      "questions": [
+        {"id": "s5_1", "question": "Design an experiment to test whether music affects plant growth. Specify IV, DV, control, and controlled variables.", "answer": "IV: music type. DV: plant height. Control: silence. Controlled: same species, soil, light, water.", "concept": "experimental_design", "hint": "What changes? What is measured? What stays the same?"},
+        {"id": "s5_2", "question": "Critique the hypothesis: 'Red light makes plants grow taller than blue light.'", "answer": "Needs refinement: specify species, light intensity, define 'taller' measurably. Test with equal-intensity LEDs, white-light control, multiple replicates.", "concept": "hypothesis_testing", "hint": "Is it specific, measurable, and falsifiable?"},
+        {"id": "s5_3", "question": "Enzyme activity peaks at 37C and drops at 60C. Explain and identify potential error.", "answer": "37C is optimum; at 60C enzyme denatures. Error: temperature fluctuations during measurement.", "concept": "data_analysis", "hint": "Think about protein structure and heat."},
+        {"id": "s5_4", "question": "Drug group averaged 5.2 days recovery (SD=1.1), placebo 7.8 days (SD=1.3). What test and is it significant?", "answer": "Independent samples t-test. 2.6-day difference likely significant with n=30 per group.", "concept": "hypothesis_testing", "hint": "Compare means relative to variability."},
+        {"id": "s5_5", "question": "Design a double-blind clinical trial for a vaccine. Why double-blind? Ethical considerations?", "answer": "Random assignment, neither participant nor researcher knows allocation. Prevents placebo effect and observer bias. Ethics: informed consent, ethics board, stopping rules.", "concept": "scientific_method", "hint": "Who is blinded and why?"}
+      ]
+    }
+  }
+}
