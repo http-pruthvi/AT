@@ -6,3 +6,4 @@ numpy
 httpx
 gradio>=5.16.0
 pandas
+plotly

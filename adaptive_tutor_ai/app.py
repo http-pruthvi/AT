@@ -1,7 +1,13 @@
+"""
+AdaptiveTutor AI - Main Gradio Dashboard
+Provides a rich interactive UI for human learning and RL simulation demos.
+"""
 import gradio as gr
+import os
 import requests
 import json
 import time
+import random
 from session_manager import SessionManager
 from product_evaluator import ProductEvaluator
 from question_generator import QuestionGenerator
@@ -209,11 +215,11 @@ def generate_chat_html(chat_history):
     html += "</div>"
     return html
 
-def start_session(student_name, subject):
-    session.reset(student_name or "Student", subject)
+def start_session(s_name, sub):
+    session.reset(s_name or "Student", sub)
     try:
         requests.post(f"{SERVER_URL}/reset", timeout=5)
-    except:
+    except Exception:
         pass
     
     weak = session.get_weak_concepts()
@@ -306,7 +312,7 @@ def submit_answer(answer_text):
             "concept": concept,
             "explanation": correct_answer
         }, timeout=5)
-    except:
+    except Exception:
         pass
     
     if session.is_complete():
@@ -522,6 +528,74 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             
             reward_chart = gr.Plot(label="Live Reward Chart")
         
+        # --- Demo Simulation Logic ---
+        def run_simulation(simulation_speed):
+            from student_model import StudentProfile
+            from expert_simulator import ExpertSimulator
+            from reward import RewardManager
+            
+            # Setup local sim environment
+            sim_student = StudentProfile()
+            sim_expert = ExpertSimulator()
+            sim_reward_mgr = RewardManager()
+            sim_subject = random.choice(["Math", "Science", "History"])
+            sim_student.load_subject(sim_subject)
+            
+            log = f"🚀 Starting RL Simulation: {sim_subject}\n"
+            log += f"👨‍🎓 Student Initial Mastery: {sim_student.get_overall_mastery():.2f}\n"
+            log += f"-------------------------------------------\n"
+            
+            total_reward = 0
+            steps = []
+            rewards = []
+            
+            for step in range(1, 21):
+                # Simple heuristic agent
+                mastery = sim_student.get_overall_mastery()
+                if mastery > 0.8:
+                    log += f"\n🎯 Mastery achieved at step {step}!"
+                    yield total_reward, step, mastery * 100, log, None
+                    break
+                
+                # Action choice
+                action_type = "ask_question"
+                if step % 5 == 0: action_type = "explain_concept"
+                
+                # Sim student response
+                correct = random.random() < (0.4 + mastery * 0.5)
+                sim_student.update_mastery("basic_concepts", 0.05 if correct else -0.02)
+                
+                # Reward
+                step_reward = sim_reward_mgr.calculate_reward(
+                    student_correct=correct,
+                    mastery_delta=0.05 if correct else -0.02,
+                    difficulty=1,
+                    action_type=action_type,
+                    expert_feedback=None
+                )
+                
+                total_reward += step_reward
+                steps.append(step)
+                rewards.append(total_reward)
+                
+                log += f"Step {step:02d}: {action_type} | Correct: {'✅' if correct else '❌'} | Reward: {step_reward:+.2f}\n"
+                
+                # Create chart
+                import pandas as pd
+                import plotly.express as px
+                df = pd.DataFrame({"Step": steps, "Total Reward": rewards})
+                fig = px.line(df, x="Step", y="Total Reward", title="Cumulative Reward Progress")
+                fig.update_layout(template="plotly_dark", plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+                
+                yield total_reward, step, mastery * 100, log, fig
+                time.sleep(0.5 / simulation_speed)
+
+        run_demo_btn.click(
+            run_simulation,
+            inputs=[speed],
+            outputs=[reward_display, step_display, mastery_pct, demo_log, reward_chart]
+        )
+        
         with gr.Tab("📊 Results & Training", id="results"):
             
             gr.HTML("<h2 style='color: #F1F5F9; padding: 20px 0 10px;'>Training Evidence</h2>")
@@ -564,4 +638,4 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
     """)
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    demo.launch()
