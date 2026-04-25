@@ -377,77 +377,11 @@ async def force_https_scheme(request, call_next):
 # ──────────────────────────────────────────────
 import gradio as gr
 from fastapi.responses import HTMLResponse
+from app import demo
 
-
-def create_dashboard(env: AdaptiveTutorEnv):
-    """Create a Gradio monitoring dashboard for the environment."""
-    with gr.Blocks(title="AdaptiveTutor AI Monitor", theme=gr.themes.Soft()) as demo:
-        gr.Markdown("# 🎓 AdaptiveTutor AI - Live Monitor")
-        gr.Markdown("Watch the AI tutor adapt to student needs and expert feedback in real-time.")
-
-        with gr.Row():
-            subject_box = gr.Textbox(label="Current Subject", interactive=False)
-            difficulty_box = gr.Number(label="Difficulty Level", interactive=False)
-            step_box = gr.Number(label="Step Count", interactive=False)
-
-        with gr.Row():
-            mastery_box = gr.Number(label="Overall Mastery", interactive=False)
-            reward_box = gr.Number(label="Last Reward", interactive=False)
-            done_box = gr.Checkbox(label="Episode Done", interactive=False)
-
-        with gr.Row():
-            state_viewer = gr.JSON(label="Full Environment State")
-            breakdown_viewer = gr.JSON(label="Reward Breakdown")
-
-        refresh_btn = gr.Button("🔄 Refresh State", variant="primary")
-
-        def update_ui():
-            s = env.state
-            student = s.get("student", {})
-            return (
-                s.get("subject", "N/A"),
-                s.get("difficulty", 1),
-                s.get("step_count", 0),
-                student.get("overall_mastery", 0.0),
-                s.get("last_reward", 0.0),
-                s.get("episode_done", False),
-                s,
-                s.get("reward_breakdown", {}),
-            )
-
-        refresh_btn.click(
-            update_ui,
-            outputs=[subject_box, difficulty_box, step_box, mastery_box, reward_box, done_box, state_viewer, breakdown_viewer],
-        )
-        demo.load(
-            update_ui,
-            outputs=[subject_box, difficulty_box, step_box, mastery_box, reward_box, done_box, state_viewer, breakdown_viewer],
-        )
-
-    return demo
-
-
-dashboard_ui = create_dashboard(env_instance)
-app = gr.mount_gradio_app(app, dashboard_ui, path="/web")
-
-
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    """Root endpoint with links to dashboard and API."""
-    return """
-    <html>
-        <head><title>AdaptiveTutor AI</title></head>
-        <body style="font-family: 'Segoe UI', sans-serif; text-align: center; padding-top: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white;">
-            <h1>🎓 AdaptiveTutor AI</h1>
-            <p style="font-size: 1.2em;">OpenEnv RL Environment — AI Tutor with Adaptive Expert Feedback</p>
-            <p>Meta PyTorch OpenEnv Hackathon Grand Finale</p>
-            <div style="margin-top: 30px;">
-                <a href="/web" style="padding: 12px 24px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; border-radius: 8px; margin: 10px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">📊 Open Monitor Dashboard</a>
-            </div>
-            <p style="margin-top: 40px; font-size: 0.85em; opacity: 0.8;">API endpoints: /reset, /step, /state (OpenEnv standard)</p>
-        </body>
-    </html>
-    """
+# Mount the rich interactive dashboard from app.py onto the root path
+# so it becomes the main UI for HuggingFace Spaces.
+app = gr.mount_gradio_app(app, demo, path="/")
 
 
 if __name__ == "__main__":
