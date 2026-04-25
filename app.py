@@ -8,7 +8,7 @@ from core.session_manager import SessionManager
 from core.product_evaluator import ProductEvaluator
 from core.question_generator import QuestionGenerator
 from shared import AdaptiveTutorEnv, TutorAction, load_ai_model, AI_LOADED, env_instance
-from config import settings
+from config import settings, ROOT_DIR
 
 SERVER_URL = settings.server_url
 qgen = QuestionGenerator()
@@ -288,7 +288,7 @@ def start_session(student_name, subject, runtime_state):
 def submit_answer(answer_text, runtime_state):
     session, env, evaluator = _get_runtime(runtime_state)
     if not answer_text.strip():
-        return generate_chat_html(session.chat_history), "", "", runtime_state
+        return generate_chat_html(session.chat_history), generate_mastery_html(session.mastery_map, session.subject), generate_stats_html(session), gr.update(visible=False), runtime_state
     
     session.add_message("human", answer_text)
     session.questions_asked += 1
@@ -788,12 +788,12 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             
             gr.HTML("<h2 style='color: #F1F5F9; padding: 20px 0 10px;'>Training Evidence</h2>")
             with gr.Row():
-                gr.Image("assets/reward_curve.png", label="Reward Improvement", 
+                gr.Image(str(ROOT_DIR / "assets/reward_curve.png"), label="Reward Improvement", 
                          show_label=True)
-                gr.Image("assets/reward_breakdown.png", label="Reward Breakdown Per Step",
+                gr.Image(str(ROOT_DIR / "assets/reward_breakdown.png"), label="Reward Breakdown Per Step",
                          show_label=True)
             
-            gr.Image("assets/mastery_progression.png", label="Student Mastery Progression")
+            gr.Image(str(ROOT_DIR / "assets/mastery_progression.png"), label="Student Mastery Progression")
             
             gr.HTML("""
             <div style='background: #1E293B; border-radius: 15px; 
@@ -910,4 +910,9 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
     """)
 
 if __name__ == "__main__":
-    demo.launch(server_name=settings.app_host, server_port=settings.app_port)
+    from config import ROOT_DIR
+    demo.launch(
+        server_name=settings.app_host, 
+        server_port=settings.app_port,
+        allowed_paths=[str(ROOT_DIR / "assets")]
+    )
