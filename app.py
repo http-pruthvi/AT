@@ -415,14 +415,15 @@ def get_ai_action(session, current_obs):
     # Build the prompt matching training format
     weak = ", ".join([c[0] for c in session.get_weak_concepts()[:3]])
     prompt = f"""<|system|>
-You are an adaptive AI tutor. Generate ONE clear question.
+You are an adaptive AI tutor who explains things SIMPLY. 
+Generate ONE clear, easy-to-understand question.
 </s>
 <|user|>
 Subject: {session.subject}
 Difficulty: {current_obs.get('difficulty', 1)}
 Student mastery: {session.get_accuracy()}%
 Weak areas: {weak}
-Generate a question.
+Generate a simple question.
 </s>
 <|assistant|>
 """
@@ -453,16 +454,16 @@ def send_teacher_note(note):
 
 with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
     
-    gr.HTML("""
+    gr.HTML(f"""
     <div style='text-align: center; padding: 20px 0 10px;'>
-        <h1 style='color: #6C63FF; font-size: 2em; margin: 0;'>
-            🎓 AdaptiveTutor AI
+        <h1 style='color: #6C63FF; font-size: 2.2em; margin: 0;'>
+            🎓 SimpleTutor AI
         </h1>
         <p style='color: #94A3B8; margin: 5px 0;'>
-            An RL environment where AI learns to teach better
+            Adaptive learning made simple for everyone
         </p>
         <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; background: {'#22c55e33' if AI_LOADED else '#ef444433'}; color: {'#22c55e' if AI_LOADED else '#ef4444'}; font-size: 0.9rem; margin-top: 10px; border: 1px solid {'#22c55e66' if AI_LOADED else '#ef444466'};">
-            ● {'RL Model Active (TinyLlama-GRPO)' if AI_LOADED else 'Rule-Based Engine (Training in progress...)'}
+            ● {'Smart AI Mode Active' if AI_LOADED else 'Rule-Based Engine (Training in progress...)'}
         </div>
         <div style='display: flex; justify-content: center; gap: 10px; margin-top: 10px;'>
             <span style='background: #6C63FF20; color: #6C63FF; 

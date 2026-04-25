@@ -30,7 +30,7 @@ class ProductEvaluator:
             return self._evaluate_with_fallback(correct_answer, student_answer)
 
     def _evaluate_with_ollama(self, subject: str, question: str, correct_answer: str, student_answer: str) -> dict:
-        prompt = f"""You are a {subject} teacher.
+        prompt = f"""You are a {subject} teacher who specializes in explaining complex things simply.
 Question asked: {question}
 Correct answer: {correct_answer}
 Student answered: {student_answer}
@@ -41,8 +41,8 @@ Be lenient with spelling and phrasing.
 Respond in JSON only:
 {{
   "is_correct": true/false,
-  "explanation": "Brief explanation of why",
-  "encouragement": "A short motivating message",
+  "explanation": "Brief, VERY SIMPLE explanation of why, avoiding jargon",
+  "encouragement": "A short, friendly and motivating message",
   "mastery_delta": 0.05 to 0.15
 }}"""
 
