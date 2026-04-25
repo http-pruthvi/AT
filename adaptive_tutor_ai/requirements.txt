@@ -6,4 +6,3 @@ numpy
 httpx
 gradio>=4.44.1
 pandas
-pyaudioop
