@@ -20,7 +20,10 @@ def cleanup():
         "train_log.txt",
         "mastery_progression.png",
         "reward_breakdown.png",
-        "reward_curve.png"
+        "reward_curve.png",
+        "push_to_hf.py",
+        "generate_plots.py",
+        "adaptive_tutor_ai"
     ]
     
     print(f"Cleaning up {repo_id}...")

@@ -38,3 +38,6 @@ server = "server:app"
 [tool.setuptools]
 include-package-data = true
 packages = ["adaptive_tutor_ai"]
+
+[tool.pytest.ini_options]
+pythonpath = "."
