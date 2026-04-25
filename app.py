@@ -8,6 +8,8 @@ import requests
 import json
 import time
 import random
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from session_manager import SessionManager
 from product_evaluator import ProductEvaluator
 from question_generator import QuestionGenerator
@@ -325,7 +327,20 @@ def submit_answer(answer_text):
     else:
         weak = session.get_weak_concepts()
         next_concept = weak[0][0] if weak else concept
-        difficulty = "easy" if not is_correct else ("hard" if session.streak > 3 else "medium")
+        # Decision making: Rule-based or RL-AI driven
+        if ai_model is not None:
+            # We wrap the session in a dict for compatibility with the OpenEnv-like observation
+            current_obs = {
+                "difficulty": 1 if session.streak < 1 else (2 if session.streak < 3 else 3),
+                "accuracy": session.get_accuracy()
+            }
+            difficulty_level, action_type = get_ai_action(session, current_obs)
+            # Map word difficulty to numeric for question generator
+            difficulty_map = {"easy": 1, "medium": 3, "hard": 5}
+            difficulty = difficulty_map.get(difficulty_level, 3)
+        else:
+            # Fallback to rules
+            difficulty = 1 if session.streak < 1 else (3 if session.streak < 3 else 5)
         teacher_note = session.get_active_teacher_note()
         
         next_q = qgen.generate_question(
@@ -370,6 +385,70 @@ def submit_answer(answer_text):
     
     return chat_html, mastery_html, stats_html
 
+# --- AI Model Integration ---
+TRAINED_MODEL_PATH = "./adaptive_tutor_trained"
+ai_model = None
+ai_tokenizer = None
+
+def load_trained_model():
+    global ai_model, ai_tokenizer
+    if os.path.exists(TRAINED_MODEL_PATH):
+        try:
+            print(f"Loading trained AI model from {TRAINED_MODEL_PATH}...")
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.float16,
+            )
+            ai_tokenizer = AutoTokenizer.from_pretrained(TRAINED_MODEL_PATH)
+            ai_model = AutoModelForCausalLM.from_pretrained(
+                TRAINED_MODEL_PATH,
+                quantization_config=bnb_config,
+                device_map="auto"
+            )
+            return True
+        except Exception as e:
+            print(f"Failed to load AI model: {e}")
+    return False
+
+def get_ai_action(session, current_obs):
+    """Use the trained RL model to decide the next tutoring action."""
+    if ai_model is None:
+        return "medium", "ask_question"
+    
+    # Build the prompt matching training format
+    weak = ", ".join([c[0] for c in session.get_weak_concepts()[:3]])
+    prompt = f"""<|system|>
+You are an adaptive AI tutor. Generate ONE clear question.
+</s>
+<|user|>
+Subject: {session.subject}
+Difficulty: {current_obs.get('difficulty', 1)}
+Student mastery: {session.get_accuracy()}%
+Weak areas: {weak}
+Generate a question.
+</s>
+<|assistant|>
+"""
+    inputs = ai_tokenizer(prompt, return_tensors="pt").to(ai_model.device)
+    with torch.no_grad():
+        outputs = ai_model.generate(**inputs, max_new_tokens=10, temperature=0.7)
+    
+    # Simple parsing: check if the AI suggests difficulty change
+    resp = ai_tokenizer.decode(outputs[0], skip_special_tokens=True).lower()
+    
+    # Default behavior
+    difficulty = "medium"
+    action = "ask_question"
+    
+    if "harder" in resp or "increase" in resp: difficulty = "hard"
+    elif "easier" in resp or "decrease" in resp: difficulty = "easy"
+    
+    return difficulty, action
+
+# Try loading on startup
+AI_LOADED = load_trained_model()
+
 def send_teacher_note(note):
     if note.strip():
         session.add_teacher_note(note)
@@ -386,6 +465,9 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
         <p style='color: #94A3B8; margin: 5px 0;'>
             An RL environment where AI learns to teach better
         </p>
+        <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; background: {'#22c55e33' if AI_LOADED else '#ef444433'}; color: {'#22c55e' if AI_LOADED else '#ef4444'}; font-size: 0.9rem; margin-top: 10px; border: 1px solid {'#22c55e66' if AI_LOADED else '#ef444466'};">
+            ● {'RL Model Active (TinyLlama-GRPO)' if AI_LOADED else 'Rule-Based Engine (Training in progress...)'}
+        </div>
         <div style='display: flex; justify-content: center; gap: 10px; margin-top: 10px;'>
             <span style='background: #6C63FF20; color: #6C63FF; 
                          padding: 4px 12px; border-radius: 20px; font-size: 12px;'>
