@@ -275,12 +275,22 @@ def start_session(student_name, subject, runtime_state):
         </div>
     </div>"""
     
-    offline_warning = "" if evaluator.ollama_available else """
-    <div style='background: #F59E0B20; border: 1px solid #F59E0B50; 
-                color: #F59E0B; padding: 8px 12px; border-radius: 8px; 
-                margin-bottom: 10px; font-size: 12px;'>
-        ⚠️ Ollama not detected - running in offline mode (simplified evaluation)
-    </div>"""
+    if evaluator.ollama_available:
+        offline_warning = ""
+    elif evaluator.ai_loaded:
+        offline_warning = """
+        <div style='background: #22C55E20; border: 1px solid #22C55E50; 
+                    color: #22C55E; padding: 8px 12px; border-radius: 8px; 
+                    margin-bottom: 10px; font-size: 12px;'>
+            ✅ Using local light-weight AI model for pedagogical evaluation
+        </div>"""
+    else:
+        offline_warning = """
+        <div style='background: #F59E0B20; border: 1px solid #F59E0B50; 
+                    color: #F59E0B; padding: 8px 12px; border-radius: 8px; 
+                    margin-bottom: 10px; font-size: 12px;'>
+            ⚠️ Ollama not detected - running in offline mode (simplified evaluation)
+        </div>"""
     
     next_state = {"session": session, "env": env, "evaluator": evaluator}
     return chat_html, mastery_html, stats_html, offline_warning, next_state

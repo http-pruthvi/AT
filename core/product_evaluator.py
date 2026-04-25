@@ -10,11 +10,22 @@ OLLAMA_MODEL = settings.ollama_model
 
 class ProductEvaluator:
     def __init__(self):
-        from shared import AI_LOADED, ai_model, ai_tokenizer
-        self.ai_model = ai_model
-        self.ai_tokenizer = ai_tokenizer
-        self.ai_loaded = AI_LOADED
         self.ollama_available = self.check_ollama()
+
+    @property
+    def ai_loaded(self) -> bool:
+        import shared
+        return shared.AI_LOADED
+
+    @property
+    def local_model(self):
+        import shared
+        return shared.ai_model
+
+    @property
+    def local_tokenizer(self):
+        import shared
+        return shared.ai_tokenizer
 
     def check_ollama(self):
         """Ping Ollama to see if it's up and has our model."""
@@ -51,10 +62,10 @@ Student Answer: {student_answer}
 """
         try:
             import torch
-            inputs = self.ai_tokenizer(prompt, return_tensors="pt").to(self.ai_model.device)
+            inputs = self.local_tokenizer(prompt, return_tensors="pt").to(self.local_model.device)
             with torch.no_grad():
-                outputs = self.ai_model.generate(**inputs, max_new_tokens=128, temperature=0.1)
-            resp_text = self.ai_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+                outputs = self.local_model.generate(**inputs, max_new_tokens=128, temperature=0.1)
+            resp_text = self.local_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
             
             # Simple JSON extraction
             start = resp_text.find("{")
@@ -185,10 +196,10 @@ Explain the error and the underlying concept in 2-3 simple sentences.
         if self.ai_loaded:
             try:
                 import torch
-                inputs = self.ai_tokenizer(prompt, return_tensors="pt").to(self.ai_model.device)
+                inputs = self.local_tokenizer(prompt, return_tensors="pt").to(self.local_model.device)
                 with torch.no_grad():
-                    outputs = self.ai_model.generate(**inputs, max_new_tokens=150, temperature=0.3)
-                return self.ai_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+                    outputs = self.local_model.generate(**inputs, max_new_tokens=150, temperature=0.3)
+                return self.local_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
             except: pass
             
         return f"The correct concept involves {correct_answer}. Keep practicing!"
