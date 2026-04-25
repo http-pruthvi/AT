@@ -9,6 +9,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from session_manager import SessionManager
 from product_evaluator import ProductEvaluator
 from question_generator import QuestionGenerator
+from shared import env_instance, TutorAction
 
 SERVER_URL = "http://localhost:7860"
 session = SessionManager()
@@ -215,10 +216,8 @@ def generate_chat_html(chat_history):
 
 def start_session(student_name, subject):
     session.reset(student_name or "Student", subject)
-    try:
-        requests.post(f"{SERVER_URL}/reset", timeout=5)
-    except:
-        pass
+    # Direct call to shared env instance instead of requests.post to avoid deadlocks
+    env_instance.reset()
     
     weak = session.get_weak_concepts()
     weak_concept = weak[0][0] if weak else "general"
@@ -303,13 +302,14 @@ def submit_answer(answer_text):
     session.add_message("feedback", feedback, is_correct=is_correct)
     session.update_mastery(concept, result.get("mastery_delta", 0.05 if is_correct else -0.02))
     
+    # Sync simulation step
     try:
-        requests.post(f"{SERVER_URL}/step", json={
-            "question": question,
-            "difficulty": q_data.get("difficulty", "medium"),
-            "concept": concept,
-            "explanation": correct_answer
-        }, timeout=5)
+        action = TutorAction(
+            action_type="ask_question",
+            difficulty=3 if q_data.get("difficulty") == "medium" else (1 if q_data.get("difficulty") == "easy" else 5),
+            target_concept=concept
+        )
+        env_instance.step(action)
     except:
         pass
     

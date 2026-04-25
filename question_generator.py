@@ -145,6 +145,54 @@ class QuestionGenerator:
         self.asked_questions.add(selected["id"])
         return selected
 
+    def generate_question(
+        self,
+        subject: str,
+        difficulty: Any = "medium",
+        concept: Optional[str] = None,
+        teacher_note: Optional[str] = None,
+        avoid_repeats: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Gradio-friendly wrapper for get_question.
+        
+        Args:
+            subject: The subject.
+            difficulty: String ('easy', 'medium', 'hard') or int (1-5).
+            concept: Optional concept filter.
+            teacher_note: Optional note (currently logged but not affecting retrieval).
+            avoid_repeats: Whether to avoid repeats.
+            
+        Returns:
+            Question dictionary.
+        """
+        # Map string difficulty to numeric
+        diff_val = 3
+        if isinstance(difficulty, str):
+            mapping = {"easy": 1, "medium": 3, "hard": 5}
+            diff_val = mapping.get(difficulty.lower(), 3)
+        elif isinstance(difficulty, int):
+            diff_val = max(1, min(5, difficulty))
+
+        question = self.get_question(subject, diff_val, concept, avoid_repeats)
+        
+        if not question:
+            # Fallback: try any difficulty
+            for d in [3, 2, 4, 1, 5]:
+                question = self.get_question(subject, d, None, avoid_repeats)
+                if question: break
+        
+        if not question:
+            return {
+                "id": "fallback",
+                "question": f"Can you tell me something interesting about {subject}?",
+                "correct_answer": "yes",
+                "concept": concept or "general",
+                "hint": "Just share what you know!"
+            }
+            
+        return question
+
     def get_level_name(self, subject: str, difficulty: int) -> str:
         """
         Get the human-readable name for a difficulty level.
