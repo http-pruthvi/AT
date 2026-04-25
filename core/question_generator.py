@@ -155,17 +155,16 @@ class QuestionGenerator:
     ) -> Dict[str, Any]:
         """
         Gradio-friendly wrapper for get_question.
-        
-        Args:
-            subject: The subject.
-            difficulty: String ('easy', 'medium', 'hard') or int (1-5).
-            concept: Optional concept filter.
-            teacher_note: Optional note (currently logged but not affecting retrieval).
-            avoid_repeats: Whether to avoid repeats.
-            
-        Returns:
-            Question dictionary.
         """
+        # Teacher Mode: try to find concept in note
+        if teacher_note and not concept:
+            available_concepts = self.get_concepts_for_subject(subject)
+            note_lower = teacher_note.lower()
+            for c in available_concepts:
+                if c.lower().replace("_", " ") in note_lower:
+                    concept = c
+                    break
+
         # Map string difficulty to numeric
         diff_val = 3
         if isinstance(difficulty, str):

@@ -432,6 +432,9 @@ def get_ai_action(session, current_obs):
     
     # Build the prompt matching training format
     weak = ", ".join([c[0] for c in session.get_weak_concepts()[:3]])
+    teacher_note = session.get_active_teacher_note()
+    teacher_context = f"Teacher Note: {teacher_note}\n" if teacher_note else ""
+    
     prompt = f"""<|system|>
 You are an adaptive AI tutor who explains things SIMPLY. 
 Generate ONE clear, easy-to-understand question.
@@ -441,6 +444,7 @@ Subject: {session.subject}
 Difficulty: {current_obs.get('difficulty', 1)}
 Student mastery: {session.get_accuracy()}%
 Weak areas: {weak}
+{teacher_context}
 Generate a simple question.
 </s>
 <|assistant|>
