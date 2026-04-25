@@ -1,6 +1,6 @@
 import os
 import sys
-import json
+import httpx
 
 # Fix Windows console encoding
 if sys.platform == "win32":
@@ -12,37 +12,42 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from trl import GRPOTrainer, GRPOConfig
 from datasets import Dataset
 
-# Import our environment client
-# We use the local server if it's running, otherwise fall back to HF Space
-try:
-    from client import AdaptiveTutorEnv, TutorAction
-    LOCAL_SERVER_AVAILABLE = True
-except ImportError:
-    LOCAL_SERVER_AVAILABLE = False
+from shared import TutorAction
 
-BASE_URL = "https://http-pruthvi-adaptive-tutor-ai.hf.space"
+BASE_URL = os.getenv("ADAPTIVE_TUTOR_ENV_URL", "https://http-pruthvi-adaptive-tutor-ai.hf.space")
 MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 
+def _step_env_once(completion: str) -> float:
+    """Get reward by sending one action to the OpenEnv HTTP server."""
+    try:
+        with httpx.Client(timeout=20.0) as client:
+            reset_res = client.post(f"{BASE_URL}/reset")
+            reset_res.raise_for_status()
+            reset_payload = reset_res.json()
+            obs = reset_payload.get("observation", reset_payload)
+            current_difficulty = int(obs.get("current_difficulty", 1))
+            profile = obs.get("student_profile", {}) or {}
+            target_concept = profile.get("weakest_concept") or obs.get("current_topic", "general")
+
+            action = TutorAction(
+                action_type="ask_question",
+                content=completion,
+                difficulty=max(1, min(5, current_difficulty)),
+                target_concept=target_concept,
+            )
+            step_res = client.post(f"{BASE_URL}/step", json={"action": action.model_dump()})
+            step_res.raise_for_status()
+            step_payload = step_res.json()
+            return float(step_payload.get("reward", 0.0))
+    except Exception as e:
+        print(f"Reward error: {e}")
+        return 0.0
+
 def openenv_reward(completions, **kwargs):
-    """OpenEnv reward function - connects to the environment server."""
+    """OpenEnv reward function for GRPO training."""
     rewards = []
     for completion in completions:
-        try:
-            # Connect to local or remote environment
-            with AdaptiveTutorEnv(base_url=BASE_URL).sync() as env:
-                obs = env.reset()
-                action = TutorAction(
-                    action_type="ask_question",
-                    question=completion,
-                    difficulty=obs.recommended_difficulty if hasattr(obs, 'recommended_difficulty') else 1,
-                    concept=obs.weak_concepts[0] if (hasattr(obs, 'weak_concepts') and obs.weak_concepts) else "general",
-                    explanation=""
-                )
-                result = env.step(action)
-                rewards.append(float(result.reward))
-        except Exception as e:
-            print(f"Reward error: {e}")
-            rewards.append(0.0)
+        rewards.append(_step_env_once(completion))
     return rewards
 
 def make_dataset():

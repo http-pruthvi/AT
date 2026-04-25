@@ -219,6 +219,7 @@ def generate_chat_html(chat_history):
 
 def start_session(student_name, subject):
     session.reset(student_name or "Student", subject)
+    profile_loaded = session.load_profile()
     # Direct call to shared env instance instead of requests.post to avoid deadlocks
     env_instance.reset()
     
@@ -227,7 +228,7 @@ def start_session(student_name, subject):
     teacher_note = session.get_active_teacher_note()
     
     question_data = qgen.generate_question(
-        subject=subject,
+        subject=subject.lower(),
         concept=weak_concept,
         difficulty="medium",
         teacher_note=teacher_note
@@ -242,6 +243,11 @@ def start_session(student_name, subject):
     
     stats_html = f"""
     <div style='padding: 10px;'>
+        <div style='background: #0f172a; border: 1px solid #334155; border-radius: 8px; 
+                    padding: 8px 10px; margin-bottom: 10px; color: #94A3B8; font-size: 12px;'>
+            {'✅ Resumed saved profile' if profile_loaded else '🆕 New profile started'} |
+            Mastery: {session.get_learning_metrics()['mastery_now_pct']}%
+        </div>
         <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px;'>
             <div style='background: #1E293B; border-radius: 10px; padding: 10px; text-align: center;'>
                 <div style='font-size: 20px;'>🔥 {session.streak}</div>
@@ -280,7 +286,7 @@ def submit_answer(answer_text):
     
     q_data = getattr(session, "current_question", {})
     question = q_data.get("question", "")
-    correct_answer = q_data.get("correct_answer", answer_text)
+    correct_answer = q_data.get("correct_answer", q_data.get("answer", answer_text))
     concept = q_data.get("concept", "general")
     
     result = evaluator.evaluate_answer(
@@ -304,6 +310,14 @@ def submit_answer(answer_text):
     
     session.add_message("feedback", feedback, is_correct=is_correct)
     session.update_mastery(concept, result.get("mastery_delta", 0.05 if is_correct else -0.02))
+    session.log_interaction(
+        question=question,
+        correct_answer=correct_answer,
+        student_answer=answer_text,
+        is_correct=is_correct,
+        concept=concept,
+        difficulty=q_data.get("difficulty", "medium"),
+    )
     
     # Sync simulation step
     try:
@@ -321,8 +335,10 @@ def submit_answer(answer_text):
         win_msg = f"""🎉 <b>Session Complete!</b><br>
         Questions: {summary['questions']} | 
         Accuracy: {summary['accuracy']}% | 
-        Time: {summary['time']}"""
+        Time: {summary['time']}<br>
+        Learning Gain: {summary['learning_gain_pct']}% | Mastery: {summary['mastery_now_pct']}%"""
         session.add_message("ai", win_msg)
+        session.save_profile()
     else:
         weak = session.get_weak_concepts()
         next_concept = weak[0][0] if weak else concept
@@ -343,7 +359,7 @@ def submit_answer(answer_text):
         teacher_note = session.get_active_teacher_note()
         
         next_q = qgen.generate_question(
-            subject=session.subject,
+            subject=session.subject.lower(),
             concept=next_concept,
             difficulty=difficulty,
             teacher_note=teacher_note
@@ -356,12 +372,19 @@ def submit_answer(answer_text):
         q_text = next_q.get("question", f"Next question about {next_concept}")
         session.add_message("ai", f"{transition}<br><br><b>Question:</b> {q_text}")
         session.current_question = next_q
+
+    session.save_profile()
     
     mastery_html = generate_mastery_html(session.mastery_map, session.subject)
     chat_html = generate_chat_html(session.chat_history)
     
     stats_html = f"""
     <div style='padding: 10px;'>
+        <div style='background: #0f172a; border: 1px solid #334155; border-radius: 8px; 
+                    padding: 8px 10px; margin-bottom: 10px; color: #94A3B8; font-size: 12px;'>
+            Learning Gain: {session.get_learning_metrics()['learning_gain_pct']}% |
+            Mastery: {session.get_learning_metrics()['mastery_now_pct']}%
+        </div>
         <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px;'>
             <div style='background: #1E293B; border-radius: 10px; padding: 10px; text-align: center;'>
                 <div style='font-size: 20px;'>{"🔥" * min(session.streak, 5)} {session.streak}</div>

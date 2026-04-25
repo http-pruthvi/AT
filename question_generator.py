@@ -190,7 +190,12 @@ class QuestionGenerator:
                 "concept": concept or "general",
                 "hint": "Just share what you know!"
             }
-            
+
+        # Normalize schema for callers expecting "correct_answer".
+        if "correct_answer" not in question and "answer" in question:
+            question = dict(question)
+            question["correct_answer"] = question["answer"]
+
         return question
 
     def get_level_name(self, subject: str, difficulty: int) -> str:
