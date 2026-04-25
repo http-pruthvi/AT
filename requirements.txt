@@ -6,3 +6,11 @@ numpy
 httpx
 gradio>=5.16.0
 pandas
+torch
+transformers
+bitsandbytes
+trl
+datasets
+accelerate
+sentencepiece
+huggingface_hub
