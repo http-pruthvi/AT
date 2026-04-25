@@ -21,7 +21,7 @@ except ImportError:
     LOCAL_SERVER_AVAILABLE = False
 
 BASE_URL = "https://http-pruthvi-adaptive-tutor-ai.hf.space"
-MODEL_NAME = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 
 def openenv_reward(completions, **kwargs):
     """OpenEnv reward function - connects to the environment server."""

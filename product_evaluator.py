@@ -5,7 +5,7 @@ import json
 import httpx
 
 OLLAMA_URL = "http://localhost:11434"
-OLLAMA_MODEL = "qwen2.5:3b"
+OLLAMA_MODEL = "qwen2.5:0.5b"
 
 class ProductEvaluator:
     def __init__(self):
