@@ -159,6 +159,40 @@ Respond in JSON only:
                 "mastery_delta": -0.05
             }
 
+    def get_deep_explanation(self, subject: str, question: str, correct_answer: str, student_answer: str) -> str:
+        """Provide a deep, helpful explanation of a misconception."""
+        prompt = f"""<|system|>
+You are a world-class {subject} tutor. The student made a mistake. 
+Explain the CONCEPT simply. Do NOT just give the answer. 
+Help them understand the 'why' so they don't repeat the mistake.
+</s>
+<|user|>
+Question: {question}
+Correct Answer: {correct_answer}
+Student's Incorrect Answer: {student_answer}
+Explain the error and the underlying concept in 2-3 simple sentences.
+</s>
+<|assistant|>
+"""
+        if self.ollama_available:
+            try:
+                r = httpx.post(f"{OLLAMA_URL}/api/generate", json={
+                    "model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "options": {"temperature": 0.3}
+                })
+                return r.json().get("response", "Keep practicing! You'll get it.")
+            except: pass
+            
+        if self.ai_loaded:
+            try:
+                import torch
+                inputs = self.ai_tokenizer(prompt, return_tensors="pt").to(self.ai_model.device)
+                with torch.no_grad():
+                    outputs = self.ai_model.generate(**inputs, max_new_tokens=150, temperature=0.3)
+                return self.ai_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+            except: pass
+            
+        return f"The correct concept involves {correct_answer}. Keep practicing!"
+
 if __name__ == "__main__":
     # Quick test
     evaluator = ProductEvaluator()

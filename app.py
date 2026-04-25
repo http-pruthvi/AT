@@ -386,13 +386,46 @@ def submit_answer(answer_text, runtime_state):
     
     mastery_html = generate_mastery_html(session.mastery_map, session.subject)
     chat_html = generate_chat_html(session.chat_history)
+    stats_html = generate_stats_html(session)
     
-    stats_html = f"""
+    # Show "Explain My Error" button only if wrong
+    explain_btn_update = gr.update(visible=not is_correct)
+    
+    return chat_html, mastery_html, stats_html, explain_btn_update, {"session": session, "env": env, "evaluator": evaluator}
+
+def explain_error_click(runtime_state):
+    session, env, evaluator = _get_runtime(runtime_state)
+    if not session.chat_history:
+        return "No recent error found.", runtime_state
+    
+    # Find last wrong answer
+    last_q = getattr(session, "current_question", None)
+    # Get last message from human
+    last_msg = next((m for m in reversed(session.chat_history) if m["role"] == "human"), None)
+    
+    if last_q and last_msg:
+        explanation = evaluator.get_deep_explanation(
+            subject=session.subject,
+            question=last_q.get("question", ""),
+            correct_answer=last_q.get("correct_answer", ""),
+            student_answer=last_msg.get("content", "")
+        )
+        
+        # Add to chat as an "explanation" bubble
+        session.add_message("ai", f"<b>💡 Deep Explanation:</b><br>{explanation}")
+        chat_html = generate_chat_html(session.chat_history)
+        return chat_html, runtime_state
+    
+    return "Could not find context for explanation.", runtime_state
+
+def generate_stats_html(session):
+    metrics = session.get_learning_metrics()
+    return f"""
     <div style='padding: 10px;'>
         <div style='background: #0f172a; border: 1px solid #334155; border-radius: 8px; 
                     padding: 8px 10px; margin-bottom: 10px; color: #94A3B8; font-size: 12px;'>
-            Learning Gain: {session.get_learning_metrics()['learning_gain_pct']}% |
-            Mastery: {session.get_learning_metrics()['mastery_now_pct']}%
+            Learning Gain: {metrics['learning_gain_pct']}% |
+            Mastery: {metrics['mastery_now_pct']}%
         </div>
         <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px;'>
             <div style='background: #1E293B; border-radius: 10px; padding: 10px; text-align: center;'>
@@ -413,9 +446,6 @@ def submit_answer(answer_text, runtime_state):
             </div>
         </div>
     </div>"""
-    
-    next_state = {"session": session, "env": env, "evaluator": evaluator}
-    return chat_html, mastery_html, stats_html, next_state
 
 # Shared model is already loaded at the top
 import shared
@@ -660,6 +690,13 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
                     teacher_btn = gr.Button("📨 Send to AI", variant="secondary")
                     teacher_status = gr.HTML("")
                     
+                    gr.HTML("<h3 style='color: #F1F5F9; margin-top: 20px;'>💡 Pedagogical Tools</h3>")
+                    explain_error_btn = gr.Button(
+                        "🔍 Explain My Error", 
+                        visible=False,
+                        variant="secondary"
+                    )
+                    
                     gr.HTML("""
                     <div style='background: #1E293B; border-radius: 12px; 
                                 padding: 15px; margin-top: 15px;'>
@@ -682,19 +719,28 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             submit_btn.click(
                 submit_answer,
                 inputs=[answer_input, runtime_state],
-                outputs=[chat_display, mastery_display, stats_display, runtime_state]
+                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, runtime_state]
             )
             
             answer_input.submit(
                 submit_answer,
                 inputs=[answer_input, runtime_state],
-                outputs=[chat_display, mastery_display, stats_display, runtime_state]
+                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, runtime_state]
             )
             
             teacher_btn.click(
                 send_teacher_note,
                 inputs=[teacher_note_input, runtime_state],
                 outputs=[teacher_status, runtime_state]
+            )
+
+            explain_error_btn.click(
+                explain_error_click,
+                inputs=[runtime_state],
+                outputs=[chat_display, runtime_state]
+            ).then(
+                lambda: gr.update(visible=False),
+                outputs=[explain_error_btn]
             )
         
         with gr.Tab("🤖 Demo Mode (RL Simulation)", id="demo"):
