@@ -4,5 +4,5 @@ uvicorn
 pydantic
 numpy
 httpx
-gradio>=4.44.1
+gradio>=5.0.0
 pandas
