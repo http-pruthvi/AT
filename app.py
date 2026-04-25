@@ -9,7 +9,10 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from session_manager import SessionManager
 from product_evaluator import ProductEvaluator
 from question_generator import QuestionGenerator
-from shared import env_instance, TutorAction
+from shared import env_instance, TutorAction, load_ai_model, AI_LOADED
+
+# --- Initialize AI ---
+load_ai_model()
 
 SERVER_URL = "http://localhost:7860"
 session = SessionManager()
@@ -381,31 +384,8 @@ def submit_answer(answer_text):
     
     return chat_html, mastery_html, stats_html
 
-# --- AI Model Integration ---
-TRAINED_MODEL_PATH = "./adaptive_tutor_trained"
-ai_model = None
-ai_tokenizer = None
-
-def load_trained_model():
-    global ai_model, ai_tokenizer
-    if os.path.exists(TRAINED_MODEL_PATH):
-        try:
-            print(f"Loading trained AI model from {TRAINED_MODEL_PATH}...")
-            bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.float16,
-            )
-            ai_tokenizer = AutoTokenizer.from_pretrained(TRAINED_MODEL_PATH)
-            ai_model = AutoModelForCausalLM.from_pretrained(
-                TRAINED_MODEL_PATH,
-                quantization_config=bnb_config,
-                device_map="auto"
-            )
-            return True
-        except Exception as e:
-            print(f"Failed to load AI model: {e}")
-    return False
+# Shared model is already loaded at the top
+from shared import ai_model, ai_tokenizer
 
 def get_ai_action(session, current_obs):
     """Use the trained RL model to decide the next tutoring action."""
@@ -443,8 +423,7 @@ Generate a simple question.
     
     return difficulty, action
 
-# Try loading on startup
-AI_LOADED = load_trained_model()
+
 
 def send_teacher_note(note):
     if note.strip():

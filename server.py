@@ -20,7 +20,15 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel, Field
 from fastapi import FastAPI
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from openenv.core.env_server import Environment, create_fastapi_app
+try:
+    from openenv.core.env_server import Environment, create_fastapi_app
+except (ImportError, ModuleNotFoundError):
+    # Minimal fallback if openenv-core is not found
+    class Environment:
+        def __init__(self): pass
+    def create_fastapi_app(factory, action_model, obs_model):
+        from fastapi import FastAPI
+        return FastAPI()
 
 from student_model import StudentProfile
 from question_generator import QuestionGenerator

@@ -6,6 +6,42 @@ from question_generator import QuestionGenerator
 from student_model import StudentProfile
 from expert_simulator import ExpertSimulator
 from reward import RewardManager
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+
+# --- Shared AI Model ---
+AI_MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
+TRAINED_MODEL_PATH = "./adaptive_tutor_trained"
+
+ai_model = None
+ai_tokenizer = None
+AI_LOADED = False
+
+def load_ai_model():
+    global ai_model, ai_tokenizer, AI_LOADED
+    if AI_LOADED: return True
+    
+    target = TRAINED_MODEL_PATH if os.path.exists(TRAINED_MODEL_PATH) else AI_MODEL_NAME
+    try:
+        print(f"Loading AI model: {target}...")
+        ai_tokenizer = AutoTokenizer.from_pretrained(target)
+        
+        # Quantization for GPU, otherwise standard load
+        if torch.cuda.is_available():
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.float16,
+            )
+            ai_model = AutoModelForCausalLM.from_pretrained(target, quantization_config=bnb_config, device_map="auto")
+        else:
+            ai_model = AutoModelForCausalLM.from_pretrained(target, device_map="cpu", torch_dtype=torch.float32)
+        
+        AI_LOADED = True
+        return True
+    except Exception as e:
+        print(f"Failed to load AI model: {e}")
+        return False
 
 # --- Shared Models ---
 
@@ -30,7 +66,15 @@ class TutorObservation(BaseModel):
     done: bool = Field(default=False)
     info: Dict[str, Any] = Field(default_factory=dict)
 
-from openenv.core.env_server import Environment
+try:
+    from openenv.core.env_server import Environment, create_fastapi_app
+except (ImportError, ModuleNotFoundError):
+    # Minimal fallback if openenv-core is not found
+    class Environment:
+        def __init__(self, *args, **kwargs): pass
+    def create_fastapi_app(factory, action_model, obs_model):
+        from fastapi import FastAPI
+        return FastAPI()
 
 # --- Shared Environment ---
 

@@ -9,6 +9,10 @@ OLLAMA_MODEL = "qwen2.5:3b"
 
 class ProductEvaluator:
     def __init__(self):
+        from shared import AI_LOADED, ai_model, ai_tokenizer
+        self.ai_model = ai_model
+        self.ai_tokenizer = ai_tokenizer
+        self.ai_loaded = AI_LOADED
         self.ollama_available = self.check_ollama()
 
     def check_ollama(self):
@@ -23,11 +27,48 @@ class ProductEvaluator:
         return False
 
     def evaluate_answer(self, subject: str, question: str, correct_answer: str, student_answer: str) -> dict:
-        """Evaluate the student's answer using Ollama, or fallback to keyword matching."""
+        """Evaluate the student's answer using Ollama, local model, or fallback."""
         if self.ollama_available:
             return self._evaluate_with_ollama(subject, question, correct_answer, student_answer)
+        elif self.ai_loaded:
+            return self._evaluate_with_local_model(subject, question, correct_answer, student_answer)
         else:
             return self._evaluate_with_fallback(correct_answer, student_answer)
+
+    def _evaluate_with_local_model(self, subject: str, question: str, correct_answer: str, student_answer: str) -> dict:
+        """Evaluate using the shared local Qwen model."""
+        prompt = f"""<|system|>
+You are a {subject} teacher. Evaluate the student's answer simply.
+Respond in JSON only: {{"is_correct": true/false, "explanation": "simple text", "encouragement": "motivating message", "mastery_delta": 0.1}}
+</s>
+<|user|>
+Question: {question}
+Correct Answer: {correct_answer}
+Student Answer: {student_answer}
+</s>
+<|assistant|>
+"""
+        try:
+            import torch
+            inputs = self.ai_tokenizer(prompt, return_tensors="pt").to(self.ai_model.device)
+            with torch.no_grad():
+                outputs = self.ai_model.generate(**inputs, max_new_tokens=128, temperature=0.1)
+            resp_text = self.ai_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+            
+            # Simple JSON extraction
+            start = resp_text.find("{")
+            end = resp_text.rfind("}") + 1
+            if start != -1 and end > start:
+                data = json.loads(resp_text[start:end])
+                return {
+                    "is_correct": bool(data.get("is_correct", False)),
+                    "explanation": str(data.get("explanation", "Good try!")),
+                    "encouragement": str(data.get("encouragement", "Keep it up!")),
+                    "mastery_delta": float(data.get("mastery_delta", 0.05))
+                }
+        except:
+            pass
+        return self._evaluate_with_fallback(correct_answer, student_answer)
 
     def _evaluate_with_ollama(self, subject: str, question: str, correct_answer: str, student_answer: str) -> dict:
         prompt = f"""You are a {subject} teacher who specializes in explaining complex things simply.
