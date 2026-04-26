@@ -428,6 +428,21 @@ def explain_error_click(runtime_state):
     
     return "Could not find context for explanation.", runtime_state
 
+def explain_concept_click(concept_name, runtime_state):
+    session, env, evaluator = _get_runtime(runtime_state)
+    if not concept_name.strip():
+        return "Please enter a concept name.", runtime_state
+    
+    explanation = evaluator.get_concept_explanation(
+        subject=session.subject if session else "General",
+        concept=concept_name
+    )
+    
+    # Add to chat as an "explanation" bubble
+    session.add_message("ai", f"<b>📚 Concept Guide: {concept_name}</b><br>{explanation}")
+    chat_html = generate_chat_html(session.chat_history)
+    return chat_html, runtime_state
+
 def generate_stats_html(session):
     metrics = session.get_learning_metrics()
     return f"""
@@ -715,6 +730,10 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
                         </p>
                     </div>
                     """)
+                    
+                    with gr.Accordion("📚 Study Assistant", open=True):
+                        concept_to_explain = gr.Textbox(label="Ask about a concept", placeholder="e.g. Newton's Third Law")
+                        explain_btn = gr.Button("Explain to Me")
             
             def quick_start():
                 return "Pruthvi", "Math"
@@ -751,10 +770,13 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             explain_error_btn.click(
                 explain_error_click,
                 inputs=[runtime_state],
-                outputs=[chat_display, runtime_state]
-            ).then(
-                lambda: gr.update(visible=False),
                 outputs=[explain_error_btn]
+            )
+
+            explain_btn.click(
+                explain_concept_click,
+                inputs=[concept_to_explain, runtime_state],
+                outputs=[chat_display, runtime_state]
             )
         
         with gr.Tab("🤖 Demo Mode (RL Simulation)", id="demo"):

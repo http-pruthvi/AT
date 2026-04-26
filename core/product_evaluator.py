@@ -204,6 +204,37 @@ Explain the error and the underlying concept in 2-3 simple sentences.
             
         return f"The correct concept involves {correct_answer}. Keep practicing!"
 
+    def get_concept_explanation(self, subject: str, concept: str) -> str:
+        """Provide a general pedagogical explanation of an academic concept."""
+        prompt = f"""<|system|>
+You are a world-class {subject} tutor. 
+Explain the concept of '{concept}' to a student simply and clearly.
+Use 2-3 sentences and focus on the fundamental principle.
+</s>
+<|user|>
+Please explain the concept of {concept}.
+</s>
+<|assistant|>
+"""
+        if self.ollama_available:
+            try:
+                r = httpx.post(f"{OLLAMA_URL}/api/generate", json={
+                    "model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "options": {"temperature": 0.4}
+                })
+                return r.json().get("response", f"The concept of {concept} is a key part of {subject}.")
+            except: pass
+            
+        if self.ai_loaded:
+            try:
+                import torch
+                inputs = self.local_tokenizer(prompt, return_tensors="pt").to(self.local_model.device)
+                with torch.no_grad():
+                    outputs = self.local_model.generate(**inputs, max_new_tokens=200, temperature=0.4)
+                return self.local_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+            except: pass
+            
+        return f"{concept} is a fundamental topic in {subject} involving key principles and logic."
+
 if __name__ == "__main__":
     # Quick test
     evaluator = ProductEvaluator()
