@@ -1,14 +1,16 @@
-{
+import json
+
+notebook = {
  "cells": [
   {
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "# AdaptiveTutor AI \u2014 GRPO Training\n",
+    "# AdaptiveTutor AI — GRPO Training\n",
     "\n",
     "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/http-pruthvi/adaptive-tutor-ai/blob/main/training.ipynb)\n",
     "\n",
-    "**Meta PyTorch OpenEnv Hackathon Grand Finale \u2014 April 2026**\n",
+    "**Meta PyTorch OpenEnv Hackathon Grand Finale — April 2026**\n",
     "\n",
     "This notebook trains an AI tutor using GRPO (Group Relative Policy Optimization) via TRL.\n",
     "The environment is running live on HuggingFace Spaces, so there's nothing to install locally.\n",
@@ -27,7 +29,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -46,7 +48,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -112,7 +114,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -157,13 +159,13 @@
    "metadata": {},
    "source": [
     "## 4. Load the model\n",
-    "TinyLlama 1.1B \u2014 small enough to fit on Colab's free T4 GPU.\n",
+    "TinyLlama 1.1B — small enough to fit on Colab's free T4 GPU.\n",
     "We'll fine-tune it to make better tutoring decisions."
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -193,7 +195,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -241,7 +243,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -291,7 +293,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -328,12 +330,12 @@
    "metadata": {},
    "source": [
     "## 8. Evaluate the trained model\n",
-    "Same setup as baseline \u2014 5 episodes, but now using the trained model's decisions."
+    "Same setup as baseline — 5 episodes, but now using the trained model's decisions."
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -367,7 +369,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -413,7 +415,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": None,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -447,3 +449,6 @@
  "nbformat": 4,
  "nbformat_minor": 4
 }
+
+with open('training/training.ipynb', 'w', encoding='utf-8') as f:
+    json.dump(notebook, f, indent=1)
