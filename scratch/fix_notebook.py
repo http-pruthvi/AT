@@ -159,7 +159,7 @@ notebook = {
    "metadata": {},
    "source": [
     "## 4. Load the model\n",
-    "Qwen2.5-1.5B-Instruct — superior reasoning in a tiny package.\n",
+    "Qwen2.5-0.5B-Instruct — ultra-fast and efficient.\n",
     "We'll fine-tune it to make better tutoring decisions."
    ]
   },
@@ -172,7 +172,7 @@ notebook = {
     "import torch\n",
     "from transformers import AutoTokenizer, AutoModelForCausalLM\n",
     "\n",
-    "MODEL = 'Qwen/Qwen2.5-1.5B-Instruct'\n",
+    "MODEL = 'Qwen/Qwen2.5-0.5B-Instruct'\n",
     "\n",
     "tokenizer = AutoTokenizer.from_pretrained(MODEL)\n",
     "tokenizer.pad_token = tokenizer.eos_token\n",
