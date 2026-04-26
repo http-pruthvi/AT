@@ -54,7 +54,7 @@ notebook = {
    "source": [
     "import requests, json, random, time\n",
     "\n",
-    "BASE_URL = 'https://http-pruthvi-adaptive-tutor-ai.hf.space'\n",
+    "BASE_URL = 'https://http-pruthvi-adaptive-tutor-ai.hf.space/api'\n",
     "\n",
     "print(\"Waking up HF Space...\")\n",
     "for i in range(3):\n",
