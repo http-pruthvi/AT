@@ -159,7 +159,7 @@ notebook = {
    "metadata": {},
    "source": [
     "## 4. Load the model\n",
-    "TinyLlama 1.1B — small enough to fit on Colab's free T4 GPU.\n",
+    "Qwen2.5-1.5B-Instruct — superior reasoning in a tiny package.\n",
     "We'll fine-tune it to make better tutoring decisions."
    ]
   },
@@ -172,7 +172,7 @@ notebook = {
     "import torch\n",
     "from transformers import AutoTokenizer, AutoModelForCausalLM\n",
     "\n",
-    "MODEL = 'TinyLlama/TinyLlama-1.1B-Chat-v1.0'\n",
+    "MODEL = 'Qwen/Qwen2.5-1.5B-Instruct'\n",
     "\n",
     "tokenizer = AutoTokenizer.from_pretrained(MODEL)\n",
     "tokenizer.pad_token = tokenizer.eos_token\n",
@@ -419,7 +419,7 @@ notebook = {
    "metadata": {},
    "outputs": [],
    "source": [
-    "REPO = 'http-pruthvi/adaptive-tutor-tinyllama-grpo'\n",
+    "REPO = 'http-pruthvi/adaptive-tutor-qwen-grpo'\n",
     "\n",
     "model.push_to_hub(REPO)\n",
     "tokenizer.push_to_hub(REPO)\n",
