@@ -26,6 +26,7 @@ env/
 *.md
 !README.md
 !pitch.md
+!BLOG.md
 outputs/
 adaptive_tutor_trained/
 grpo_adaptive_tutor/
