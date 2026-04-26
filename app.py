@@ -916,6 +916,68 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             
             demo.load(load_history, outputs=[history_display])
 
+        with gr.Tab("🧠 AI Core", id="ai-core"):
+            with gr.Row():
+                with gr.Column(scale=1):
+                    gr.HTML("""
+                    <div style='background: #1E293B; border-radius: 12px; padding: 20px; border: 1px solid #334155;'>
+                        <h3 style='color: #6C63FF; margin-top: 0;'>Model Card: Qwen-0.5B-Instruct</h3>
+                        <table style='width: 100%; color: #94A3B8; font-size: 13px;'>
+                            <tr style='border-bottom: 1px solid #334155;'>
+                                <td style='padding: 8px 0;'>Parameters</td>
+                                <td style='padding: 8px 0; color: #F1F5F9;'>494 Million</td>
+                            </tr>
+                            <tr style='border-bottom: 1px solid #334155;'>
+                                <td style='padding: 8px 0;'>Architecture</td>
+                                <td style='padding: 8px 0; color: #F1F5F9;'>Transformer (Causal)</td>
+                            </tr>
+                            <tr style='border-bottom: 1px solid #334155;'>
+                                <td style='padding: 8px 0;'>Quantization</td>
+                                <td style='padding: 8px 0; color: #F1F5F9;'>4-bit (bitsandbytes)</td>
+                            </tr>
+                            <tr style='border-bottom: 1px solid #334155;'>
+                                <td style='padding: 8px 0;'>Context Window</td>
+                                <td style='padding: 8px 0; color: #F1F5F9;'>2048 Tokens</td>
+                            </tr>
+                            <tr>
+                                <td style='padding: 8px 0;'>Optimization</td>
+                                <td style='padding: 8px 0; color: #F1F5F9;'>GRPO / RLHF</td>
+                            </tr>
+                        </table>
+                    </div>
+                    """)
+                
+                with gr.Column(scale=2):
+                    gr.HTML("""
+                    <div style='background: #1E293B; border-radius: 12px; padding: 20px; border: 1px solid #334155; height: 100%;'>
+                        <h3 style='color: #22C55E; margin-top: 0;'>Recursive Improvement Loop</h3>
+                        <div style='background: #0F172A; padding: 20px; border-radius: 8px; text-align: center;'>
+                            <pre style='color: #6C63FF; font-family: monospace; font-size: 12px; line-height: 1.5;'>
+  [ Environment ] <--- [ AI Policy ]
+        |                   ^
+        v                   |
+  [ Trajectory ] ----> [ GRPO Logic ]
+        |                   ^
+        v                   |
+  [ Expert Critic ] --------/
+                            </pre>
+                            <p style='color: #475569; font-size: 11px; margin-top: 15px;'>
+                                The "Critic" generates high-reasoning corrections for failed trajectories, 
+                                which the "Policy" then absorbs to improve future student outcomes.
+                            </p>
+                        </div>
+                    </div>
+                    """)
+            
+            with gr.Accordion("🛠️ Technical Details", open=False):
+                gr.Markdown("""
+                ### How the Model Improves Itself
+                The **AdaptiveTutor AI** leverages a two-stage self-improvement process:
+                
+                1. **Trajectory Distillation**: The system identifies sessions where student learning gain was below 20%. It uses a rule-based expert (and optionally a larger LLM) to re-simulate those exact steps with 'Gold Standard' actions.
+                2. **GRPO Fine-tuning**: Using Group Relative Policy Optimization, the model minimizes the KL divergence between its current output and the Gold Standard trajectories while maximizing the reward from the `RewardManager`.
+                """)
+
         with gr.Tab("🏆 How It Works", id="architecture"):
             gr.HTML("""
             <div style='padding: 20px;'>
