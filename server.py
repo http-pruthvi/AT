@@ -57,13 +57,18 @@ def env_factory():
     """Factory function for OpenEnv."""
     return env_instance
 
-from fastapi import FastAPI
+from fastapi import FastAPI, RedirectResponse
 
 # Create the base FastAPI app
 main_app = FastAPI(title="AdaptiveTutor AI Server")
 
 # Create the OpenEnv app
 env_app = create_fastapi_app(env_factory, TutorAction, TutorObservation)
+
+# Add health to env_app directly so it's under /api/health
+@env_app.get("/health")
+def env_health():
+    return {"status": "ok", "service": "adaptive-tutor-env"}
 
 # Mount the OpenEnv app at /api
 main_app.mount("/api", env_app)
@@ -73,7 +78,7 @@ app = main_app
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "adaptive-tutor"}
+    return {"status": "ok", "service": "adaptive-tutor-main"}
 
 
 @app.get("/health/liveness")
