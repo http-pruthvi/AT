@@ -4,10 +4,11 @@ import time
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
+import shared
 from core.session_manager import SessionManager
 from core.product_evaluator import ProductEvaluator
 from core.question_generator import QuestionGenerator
-from shared import AdaptiveTutorEnv, TutorAction, load_ai_model, AI_LOADED, env_instance
+from shared import AdaptiveTutorEnv, TutorAction, load_ai_model, env_instance
 from config import settings, ROOT_DIR
 
 SERVER_URL = settings.server_url
@@ -225,6 +226,10 @@ def _get_runtime(runtime_state):
 
 
 def start_session(student_name, subject, runtime_state):
+    # Auto-load model on start
+    if not shared.AI_LOADED:
+        load_ai_model()
+        
     session, env, evaluator = _get_runtime(runtime_state)
     session.reset(student_name or "Student", subject)
     profile_loaded = session.load_profile()
@@ -293,7 +298,7 @@ def start_session(student_name, subject, runtime_state):
         </div>"""
     
     next_state = {"session": session, "env": env, "evaluator": evaluator}
-    return chat_html, mastery_html, stats_html, offline_warning, next_state
+    return chat_html, mastery_html, stats_html, offline_warning, get_status_html(), next_state
 
 def submit_answer(answer_text, runtime_state):
     session, env, evaluator = _get_runtime(runtime_state)
@@ -308,6 +313,22 @@ def submit_answer(answer_text, runtime_state):
     correct_answer = q_data.get("correct_answer", q_data.get("answer", answer_text))
     concept = q_data.get("concept", "general")
     
+    # Intent Detection: Is the student asking a question instead of answering?
+    lower_ans = answer_text.lower().strip()
+    is_question = any(q in lower_ans for q in ["?", "why", "how", "what is", "explain", "help", "don't understand"])
+    
+    if is_question:
+        # Load AI if needed
+        if not shared.AI_LOADED:
+            load_ai_model()
+            
+        explanation = evaluator.get_concept_explanation(
+            subject=session.subject,
+            concept=answer_text
+        )
+        session.add_message("ai", f"<b>💡 Quick Explanation:</b><br>{explanation}<br><br>Now, back to our question: <b>{q_data.get('question', '')}</b>")
+        return generate_chat_html(session.chat_history), generate_mastery_html(session.mastery_map, session.subject), generate_stats_html(session), gr.update(visible=True), "", get_status_html(), {"session": session, "env": env, "evaluator": evaluator}
+
     result = evaluator.evaluate_answer(
         question=question,
         correct_answer=correct_answer,
@@ -401,7 +422,7 @@ def submit_answer(answer_text, runtime_state):
     # Show "Explain My Error" button only if wrong
     explain_btn_update = gr.update(visible=not is_correct)
     
-    return chat_html, mastery_html, stats_html, explain_btn_update, "", {"session": session, "env": env, "evaluator": evaluator}
+    return chat_html, mastery_html, stats_html, explain_btn_update, "", get_status_html(), {"session": session, "env": env, "evaluator": evaluator}
 
 def explain_error_click(runtime_state):
     session, env, evaluator = _get_runtime(runtime_state)
@@ -428,20 +449,15 @@ def explain_error_click(runtime_state):
     
     return "Could not find context for explanation.", runtime_state
 
-def explain_concept_click(concept_name, runtime_state):
+def explain_concept_click(concept, runtime_state):
+    # Load AI if needed
+    if not shared.AI_LOADED:
+        load_ai_model()
+        
     session, env, evaluator = _get_runtime(runtime_state)
-    if not concept_name.strip():
-        return "Please enter a concept name.", runtime_state
-    
-    explanation = evaluator.get_concept_explanation(
-        subject=session.subject if session else "General",
-        concept=concept_name
-    )
-    
-    # Add to chat as an "explanation" bubble
-    session.add_message("ai", f"<b>📚 Concept Guide: {concept_name}</b><br>{explanation}")
-    chat_html = generate_chat_html(session.chat_history)
-    return chat_html, runtime_state
+    explanation = evaluator.get_concept_explanation(session.subject, concept)
+    session.add_message("ai", f"<b>📚 Concept Guide: {concept}</b><br>{explanation}")
+    return generate_chat_html(session.chat_history), get_status_html(), {"session": session, "env": env, "evaluator": evaluator}
 
 def generate_stats_html(session):
     metrics = session.get_learning_metrics()
@@ -631,31 +647,52 @@ def run_demo_sim(speed_val):
     log_text += f"\n🏁 Episode Complete! Total Reward: {total_reward:.2f}"
     yield total_reward, steps, avg_mastery * 100, log_text, plt.gcf()
 
+def get_status_html():
+    is_loaded = shared.AI_LOADED
+    # Check if we tried to load but failed
+    has_model = shared.ai_model is not None
+    
+    if is_loaded and has_model:
+        color = "#22c55e"
+        text = "🚀 Smart AI Mode Active (Local Model)"
+    elif is_loaded and not has_model:
+        color = "#f59e0b"
+        text = "⚠️ AI Loading Failed - Using Fallback"
+    else:
+        color = "#94a3b8"
+        text = "💤 AI Offline (Starts on Session Start)"
+        
+    return f"""
+    <div style="display: inline-block; padding: 6px 14px; border-radius: 20px; background: {color}22; color: {color}; font-size: 0.9rem; margin-top: 10px; border: 1px solid {color}44; font-weight: 600;">
+        <span style="margin-right: 6px;">●</span>{text}
+    </div>
+    """
+
 with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
     
     gr.HTML(f"""
     <div style='text-align: center; padding: 20px 0 10px;'>
         <h1 style='color: #6C63FF; font-size: 2.2em; margin: 0;'>
-            🎓 SimpleTutor AI
+            🎓 AdaptiveTutor AI
         </h1>
         <p style='color: #94A3B8; margin: 5px 0;'>
-            Adaptive learning made simple for everyone
+            An RL Environment Where AI Learns to Teach Better
         </p>
-        <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; background: {'#22c55e33' if AI_LOADED else '#ef444433'}; color: {'#22c55e' if AI_LOADED else '#ef4444'}; font-size: 0.9rem; margin-top: 10px; border: 1px solid {'#22c55e66' if AI_LOADED else '#ef444466'};">
-            ● {'Smart AI Mode Active' if AI_LOADED else 'Rule-Based Engine (Training in progress...)'}
-        </div>
+    </div>
+    """)
+    
+    status_banner = gr.HTML(get_status_html())
+    
+    gr.HTML(f"""
+    <div style='text-align: center;'>
         <div style='display: flex; justify-content: center; gap: 10px; margin-top: 10px;'>
             <span style='background: #6C63FF20; color: #6C63FF; 
                          padding: 4px 12px; border-radius: 20px; font-size: 12px;'>
-                OpenEnv
+                RL-Powered Adaptive Engine
             </span>
-            <span style='background: #22C55E20; color: #22C55E; 
+            <span style='background: #10B98120; color: #10B981; 
                          padding: 4px 12px; border-radius: 20px; font-size: 12px;'>
-                Self-Improvement Theme
-            </span>
-            <span style='background: #F59E0B20; color: #F59E0B; 
-                         padding: 4px 12px; border-radius: 20px; font-size: 12px;'>
-                Snorkel AI Bonus
+                Real-time Student Modeling
             </span>
         </div>
     </div>
@@ -746,19 +783,19 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             start_btn.click(
                 start_session,
                 inputs=[student_name, subject, runtime_state],
-                outputs=[chat_display, mastery_display, stats_display, offline_banner, runtime_state]
+                outputs=[chat_display, mastery_display, stats_display, offline_banner, status_banner, runtime_state]
             )
             
             submit_btn.click(
                 submit_answer,
                 inputs=[answer_input, runtime_state],
-                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, answer_input, runtime_state]
+                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, answer_input, status_banner, runtime_state]
             )
             
             answer_input.submit(
                 submit_answer,
                 inputs=[answer_input, runtime_state],
-                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, answer_input, runtime_state]
+                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, answer_input, status_banner, runtime_state]
             )
             
             teacher_btn.click(
@@ -776,7 +813,7 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             explain_btn.click(
                 explain_concept_click,
                 inputs=[concept_to_explain, runtime_state],
-                outputs=[chat_display, runtime_state]
+                outputs=[chat_display, status_banner, runtime_state]
             )
         
         with gr.Tab("🤖 Demo Mode (RL Simulation)", id="demo"):

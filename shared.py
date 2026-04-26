@@ -20,28 +20,50 @@ AI_LOADED = False
 
 def load_ai_model():
     global ai_model, ai_tokenizer, AI_LOADED
-    if AI_LOADED: return True
+    if AI_LOADED: 
+        return True
     
     target = TRAINED_MODEL_PATH if os.path.exists(TRAINED_MODEL_PATH) else AI_MODEL_NAME
     try:
-        print(f"Loading AI model: {target}...")
+        print(f"🚀 Loading AI model: {target}...")
         ai_tokenizer = AutoTokenizer.from_pretrained(target)
         
         # Quantization for GPU, otherwise standard load
         if torch.cuda.is_available():
-            bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.float16,
-            )
-            ai_model = AutoModelForCausalLM.from_pretrained(target, quantization_config=bnb_config, device_map="auto")
+            try:
+                print("💎 Attempting GPU with 4-bit quantization...")
+                bnb_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=torch.float16,
+                )
+                ai_model = AutoModelForCausalLM.from_pretrained(
+                    target, 
+                    quantization_config=bnb_config, 
+                    device_map="auto"
+                )
+                print("✅ GPU Quantization Success!")
+            except Exception as bnb_err:
+                print(f"⚠️ Quantization failed ({bnb_err}). Falling back to Float16...")
+                ai_model = AutoModelForCausalLM.from_pretrained(
+                    target,
+                    torch_dtype=torch.float16,
+                    device_map="auto"
+                )
         else:
-            ai_model = AutoModelForCausalLM.from_pretrained(target, device_map="cpu", torch_dtype=torch.float32)
+            print("💻 Using CPU (This may be slow)")
+            ai_model = AutoModelForCausalLM.from_pretrained(
+                target, 
+                device_map="cpu", 
+                torch_dtype=torch.float32
+            )
         
         AI_LOADED = True
+        print("✅ AI Model Loaded Successfully!")
         return True
     except Exception as e:
-        print(f"Failed to load AI model: {e}")
+        print(f"❌ Failed to load AI model: {e}")
+        AI_LOADED = False
         return False
 
 # --- Shared Models ---

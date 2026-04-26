@@ -57,7 +57,8 @@ def env_factory():
     """Factory function for OpenEnv."""
     return env_instance
 
-from fastapi import FastAPI, RedirectResponse
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 
 # Create the base FastAPI app
 main_app = FastAPI(title="AdaptiveTutor AI Server")

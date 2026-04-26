@@ -39,16 +39,29 @@ class ProductEvaluator:
         return False
 
     def evaluate_answer(self, subject: str, question: str, correct_answer: str, student_answer: str) -> dict:
-        """Evaluate the student's answer using Ollama, local model, or fallback."""
+        """Evaluate the student's answer using local model (priority) or Ollama/fallback."""
+        # Priority 1: Local Model (Trained specifically for this task)
+        if self.ai_loaded:
+            try:
+                return self._evaluate_with_local_model(subject, question, correct_answer, student_answer)
+            except Exception as e:
+                print(f"⚠️ Local model evaluation failed: {e}. Trying Ollama...")
+        
+        # Priority 2: Ollama (External general purpose model)
         if self.ollama_available:
-            return self._evaluate_with_ollama(subject, question, correct_answer, student_answer)
-        elif self.ai_loaded:
-            return self._evaluate_with_local_model(subject, question, correct_answer, student_answer)
-        else:
-            return self._evaluate_with_fallback(correct_answer, student_answer)
+            try:
+                return self._evaluate_with_ollama(subject, question, correct_answer, student_answer)
+            except Exception as e:
+                print(f"⚠️ Ollama evaluation failed: {e}. Using rule-based fallback.")
+        
+        # Absolute fallback
+        return self._evaluate_with_fallback(correct_answer, student_answer)
 
     def _evaluate_with_local_model(self, subject: str, question: str, correct_answer: str, student_answer: str) -> dict:
         """Evaluate using the shared local Qwen model."""
+        if not self.local_model:
+            raise ValueError("Local model object is None")
+            
         prompt = f"""<|system|>
 You are a {subject} teacher. Evaluate the student's answer simply.
 Respond in JSON only: {{"is_correct": true/false, "explanation": "simple text", "encouragement": "motivating message", "mastery_delta": 0.1}}
@@ -60,27 +73,24 @@ Student Answer: {student_answer}
 </s>
 <|assistant|>
 """
-        try:
-            import torch
-            inputs = self.local_tokenizer(prompt, return_tensors="pt").to(self.local_model.device)
-            with torch.no_grad():
-                outputs = self.local_model.generate(**inputs, max_new_tokens=128, temperature=0.1)
-            resp_text = self.local_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
-            
-            # Simple JSON extraction
-            start = resp_text.find("{")
-            end = resp_text.rfind("}") + 1
-            if start != -1 and end > start:
-                data = json.loads(resp_text[start:end])
-                return {
-                    "is_correct": bool(data.get("is_correct", False)),
-                    "explanation": str(data.get("explanation", "Good try!")),
-                    "encouragement": str(data.get("encouragement", "Keep it up!")),
-                    "mastery_delta": float(data.get("mastery_delta", 0.05))
-                }
-        except Exception:
-            pass
-        return self._evaluate_with_fallback(correct_answer, student_answer)
+        import torch
+        inputs = self.local_tokenizer(prompt, return_tensors="pt").to(self.local_model.device)
+        with torch.no_grad():
+            outputs = self.local_model.generate(**inputs, max_new_tokens=150, temperature=0.1)
+        resp_text = self.local_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        
+        # Simple JSON extraction
+        start = resp_text.find("{")
+        end = resp_text.rfind("}") + 1
+        if start != -1 and end > start:
+            data = json.loads(resp_text[start:end])
+            return {
+                "is_correct": bool(data.get("is_correct", False)),
+                "explanation": str(data.get("explanation", "Good try!")),
+                "encouragement": str(data.get("encouragement", "Keep it up!")),
+                "mastery_delta": float(data.get("mastery_delta", 0.05))
+            }
+        raise ValueError(f"Could not parse JSON from model response: {resp_text}")
 
     def _evaluate_with_ollama(self, subject: str, question: str, correct_answer: str, student_answer: str) -> dict:
         prompt = f"""You are a {subject} teacher who specializes in explaining complex things simply.
@@ -173,26 +183,18 @@ Respond in JSON only:
     def get_deep_explanation(self, subject: str, question: str, correct_answer: str, student_answer: str) -> str:
         """Provide a deep, helpful explanation of a misconception."""
         prompt = f"""<|system|>
-You are a world-class {subject} tutor. The student made a mistake. 
-Explain the CONCEPT simply. Do NOT just give the answer. 
-Help them understand the 'why' so they don't repeat the mistake.
+You are a world-class {subject} tutor. Explain the concept simply. 
+Do NOT just give the answer. 2-3 sentences max.
 </s>
 <|user|>
 Question: {question}
 Correct Answer: {correct_answer}
-Student's Incorrect Answer: {student_answer}
-Explain the error and the underlying concept in 2-3 simple sentences.
+Student Answer: {student_answer}
+Explain why the student was wrong and the correct logic.
 </s>
 <|assistant|>
 """
-        if self.ollama_available:
-            try:
-                r = httpx.post(f"{OLLAMA_URL}/api/generate", json={
-                    "model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "options": {"temperature": 0.3}
-                })
-                return r.json().get("response", "Keep practicing! You'll get it.")
-            except: pass
-            
+        # Priority 1: Local Model
         if self.ai_loaded:
             try:
                 import torch
@@ -200,30 +202,31 @@ Explain the error and the underlying concept in 2-3 simple sentences.
                 with torch.no_grad():
                     outputs = self.local_model.generate(**inputs, max_new_tokens=150, temperature=0.3)
                 return self.local_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+            except Exception as e:
+                print(f"⚠️ Local deep explanation failed: {e}")
+
+        # Priority 2: Ollama
+        if self.ollama_available:
+            try:
+                r = httpx.post(f"{OLLAMA_URL}/api/generate", json={
+                    "model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "options": {"temperature": 0.3}
+                }, timeout=10.0)
+                return r.json().get("response", "Keep practicing!")
             except: pass
             
-        return f"The correct concept involves {correct_answer}. Keep practicing!"
+        return f"The correct concept involves {correct_answer}. Let's look at the logic again!"
 
     def get_concept_explanation(self, subject: str, concept: str) -> str:
         """Provide a general pedagogical explanation of an academic concept."""
         prompt = f"""<|system|>
-You are a world-class {subject} tutor. 
-Explain the concept of '{concept}' to a student simply and clearly.
-Use 2-3 sentences and focus on the fundamental principle.
+You are a world-class {subject} tutor. Explain '{concept}' simply in 2-3 sentences.
 </s>
 <|user|>
-Please explain the concept of {concept}.
+Please explain {concept}.
 </s>
 <|assistant|>
 """
-        if self.ollama_available:
-            try:
-                r = httpx.post(f"{OLLAMA_URL}/api/generate", json={
-                    "model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "options": {"temperature": 0.4}
-                })
-                return r.json().get("response", f"The concept of {concept} is a key part of {subject}.")
-            except: pass
-            
+        # Priority 1: Local Model
         if self.ai_loaded:
             try:
                 import torch
@@ -231,6 +234,16 @@ Please explain the concept of {concept}.
                 with torch.no_grad():
                     outputs = self.local_model.generate(**inputs, max_new_tokens=200, temperature=0.4)
                 return self.local_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+            except Exception as e:
+                print(f"⚠️ Local concept explanation failed: {e}")
+
+        # Priority 2: Ollama
+        if self.ollama_available:
+            try:
+                r = httpx.post(f"{OLLAMA_URL}/api/generate", json={
+                    "model": OLLAMA_MODEL, "prompt": prompt, "stream": False, "options": {"temperature": 0.4}
+                }, timeout=10.0)
+                return r.json().get("response", f"The concept of {concept} is a key part of {subject}.")
             except: pass
             
         return f"{concept} is a fundamental topic in {subject} involving key principles and logic."
