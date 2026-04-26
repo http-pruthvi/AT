@@ -401,7 +401,7 @@ def submit_answer(answer_text, runtime_state):
     # Show "Explain My Error" button only if wrong
     explain_btn_update = gr.update(visible=not is_correct)
     
-    return chat_html, mastery_html, stats_html, explain_btn_update, {"session": session, "env": env, "evaluator": evaluator}
+    return chat_html, mastery_html, stats_html, explain_btn_update, "", {"session": session, "env": env, "evaluator": evaluator}
 
 def explain_error_click(runtime_state):
     session, env, evaluator = _get_runtime(runtime_state)
@@ -656,21 +656,17 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
                 runtime_state = gr.State(value={})
                 with gr.Column(scale=1):
                     gr.HTML("<h3 style='color: #F1F5F9;'>👤 Student Profile</h3>")
-                    student_name = gr.Textbox(
-                        placeholder="Your name...",
-                        label="Name",
-                        value="Student"
-                    )
-                    subject = gr.Dropdown(
-                        choices=["Math", "Science", "History"],
-                        value="Math",
-                        label="Subject"
-                    )
-                    start_btn = gr.Button(
-                        "🚀 Start Learning!", 
-                        variant="primary",
-                        elem_classes=["primary-btn"]
-                    )
+                    with gr.Row():
+                        student_name = gr.Textbox(label="Student Name", placeholder="e.g. Pruthvi", scale=2)
+                        subject = gr.Dropdown(
+                            label="Subject", 
+                            choices=["Math", "Science", "History"], 
+                            value="Math",
+                            scale=1
+                        )
+                        quick_start_btn = gr.Button("⚡ Quick Start", scale=1)
+                    
+                    start_btn = gr.Button("🚀 Start Learning Session", variant="primary")
                     mastery_display = gr.HTML(
                         "<div style='color: #94A3B8; padding: 20px; text-align: center;'>Start a session to see your progress</div>"
                     )
@@ -720,6 +716,14 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
                     </div>
                     """)
             
+            def quick_start():
+                return "Pruthvi", "Math"
+            
+            quick_start_btn.click(
+                quick_start,
+                outputs=[student_name, subject]
+            )
+
             start_btn.click(
                 start_session,
                 inputs=[student_name, subject, runtime_state],
@@ -729,13 +733,13 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             submit_btn.click(
                 submit_answer,
                 inputs=[answer_input, runtime_state],
-                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, runtime_state]
+                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, answer_input, runtime_state]
             )
             
             answer_input.submit(
                 submit_answer,
                 inputs=[answer_input, runtime_state],
-                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, runtime_state]
+                outputs=[chat_display, mastery_display, stats_display, explain_error_btn, answer_input, runtime_state]
             )
             
             teacher_btn.click(
