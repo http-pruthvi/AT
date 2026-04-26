@@ -824,12 +824,12 @@ with gr.Blocks(css=CUSTOM_CSS, title="AdaptiveTutor AI") as demo:
             
             gr.HTML("<h2 style='color: #F1F5F9; padding: 20px 0 10px;'>Training Evidence</h2>")
             with gr.Row():
-                gr.Image(str(ROOT_DIR / "assets/reward_curve.png"), label="Reward Improvement", 
+                gr.Image("assets/reward_curve.png", label="Reward Improvement", 
                          show_label=True)
-                gr.Image(str(ROOT_DIR / "assets/reward_breakdown.png"), label="Reward Breakdown Per Step",
+                gr.Image("assets/reward_breakdown.png", label="Reward Breakdown Per Step",
                          show_label=True)
             
-            gr.Image(str(ROOT_DIR / "assets/mastery_progression.png"), label="Student Mastery Progression")
+            gr.Image("assets/mastery_progression.png", label="Student Mastery Progression")
             
             gr.HTML("""
             <div style='background: #1E293B; border-radius: 15px; 

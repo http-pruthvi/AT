@@ -51,13 +51,13 @@ Student ←→ AI Tutor Agent ←→ OpenEnv Environment
 
 ## 📊 Results
 
-![Reward Curve](reward_curve.png)
+![Reward Curve](assets/reward_curve.png)
 *Baseline random policy: ~8.5 avg reward | Trained policy: ~14.60 (+72%)*
 
-![Reward Breakdown](reward_breakdown.png)
+![Reward Breakdown](assets/reward_breakdown.png)
 *Reward breakdown per step showing multi-dimensional signal*
 
-![Mastery Progression](mastery_progression.png)
+![Mastery Progression](assets/mastery_progression.png)
 *Student concept mastery growing over 20-step episode*
 
 ## 🎁 Reward Functions
